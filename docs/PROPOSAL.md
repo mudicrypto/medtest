@@ -2,7 +2,7 @@
 
 > **Learn the medicine. Master the Russian exam.**
 >
-> Status: **proposal, awaiting approval.** No application code has been written yet.
+> Status: **approved 2026-10-10.** Milestone 1 (clickable prototype) in progress.
 
 ---
 
@@ -216,9 +216,9 @@ Each milestone ends with: tests run, results reported honestly, commit, push, an
 
 ---
 
-## 10. Decisions I need from you
+## 10. Decisions (answered 2026-10-10)
 
-1. **Approve the stack** (Next.js + Tailwind + Supabase + Claude API for the tutor), or tell me what to change.
-2. **The name MedPrep:** keep it for now? (It's easy to change later.)
-3. **Content sources:** do you have, or plan to get, rights to any official Russian question material? Until you confirm, everything will be `original_practice` or `demo`.
-4. **Medical reviewers:** will a qualified doctor review content? The workflow assumes yes before anything is published.
+1. **Stack:** approved: Next.js + Tailwind + Supabase + Claude API for the tutor.
+2. **Name:** keep **MedPrep** for now.
+3. **Content rights:** the product owner (a physician at Sechenov University) reports permission to use the question material, and that the questions have been approved. **Action for Milestone 3:** record the permission document (who granted it, scope, date) as a `content_sources` row, so every imported question links to its rights evidence.
+4. **Medical review:** qualified doctors will review all content. The `review_status` workflow (draft → in_review → approved) stays mandatory before publication.

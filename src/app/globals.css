@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* MedPrep design tokens — light, calm, clinical. Used as Tailwind classes,
+   e.g. bg-surface, text-ink, text-ink-muted, bg-accent, border-line. */
+@theme {
+  --color-canvas: #f7f9fb;
+  --color-surface: #ffffff;
+  --color-sunken: #eef2f6;
+  --color-line: #e2e8f0;
+  --color-line-strong: #cbd5e1;
+
+  --color-ink: #0b1b34;
+  --color-ink-soft: #33435c;
+  --color-ink-muted: #5f6f86;
+
+  --color-accent: #0f766e;
+  --color-accent-strong: #115e59;
+  --color-accent-soft: #e6f4f2;
+  --color-accent-line: #a7d8d1;
+
+  --color-success: #15803d;
+  --color-success-soft: #ecfdf3;
+  --color-danger: #b42318;
+  --color-danger-soft: #fef3f2;
+  --color-warning: #a15c07;
+  --color-warning-soft: #fffaeb;
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+
+  --shadow-card: 0 1px 2px rgb(11 27 52 / 0.04), 0 1px 3px rgb(11 27 52 / 0.06);
+  --shadow-lift: 0 4px 24px rgb(11 27 52 / 0.08);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
