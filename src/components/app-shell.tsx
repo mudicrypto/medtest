@@ -37,7 +37,7 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, account }: { children: React.ReactNode; account: React.ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -76,11 +76,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-auto rounded-xl border border-[#fedf89] bg-warning-soft p-3 text-xs leading-relaxed text-warning">
-          <p className="flex items-center gap-1.5 font-semibold">
-            <FlaskConical className="size-3.5" aria-hidden /> Prototype
-          </p>
-          <p className="mt-1">All questions and progress are demo data, saved only in this browser.</p>
+        <div className="mt-auto space-y-3">
+          <div className="rounded-xl border border-[#fedf89] bg-warning-soft p-3 text-xs leading-relaxed text-warning">
+            <p className="flex items-center gap-1.5 font-semibold">
+              <FlaskConical className="size-3.5" aria-hidden /> Prototype
+            </p>
+            <p className="mt-1">Questions and progress are demo data, saved only in this browser.</p>
+          </div>
+          {account}
         </div>
       </aside>
 
@@ -127,6 +130,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 );
               })}
             </div>
+            <div className="mt-3">{account}</div>
           </nav>
         )}
 

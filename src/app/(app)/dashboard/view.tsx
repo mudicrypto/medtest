@@ -10,7 +10,7 @@ import { questionById } from "@/demo/questions";
 import { ButtonLink, Card, PageHeader, ProgressBar, Skeleton, StatTile } from "@/components/ui";
 import { VolumeColumns } from "@/components/charts";
 
-export function DashboardView() {
+export function DashboardView({ greeting }: { greeting: React.ReactNode }) {
   const s = useDemoStore();
   if (!s.ready) return <DashboardSkeleton />;
 
@@ -31,7 +31,7 @@ export function DashboardView() {
     <>
       <PageHeader
         eyebrow="Dashboard"
-        title="Welcome back, Dr. Demo"
+        title={greeting}
         description="Here's what to focus on today. Start with your review queue — it takes the least time and protects what you've already learned."
       />
 

@@ -40,8 +40,8 @@ export default function Home() {
           <ButtonLink href="/login" variant="ghost">
             Sign in
           </ButtonLink>
-          <ButtonLink href="/dashboard" className="hidden sm:inline-flex">
-            Try the demo
+          <ButtonLink href="/signup" className="hidden sm:inline-flex">
+            Create account
           </ButtonLink>
         </nav>
       </header>
@@ -63,14 +63,14 @@ export default function Home() {
               . Study in English, build your Russian medical vocabulary, and always know where every question comes from.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <ButtonLink href="/dashboard" className="h-12 px-6 text-base">
-                Explore the prototype <ArrowRight className="size-4" aria-hidden />
+              <ButtonLink href="/signup" className="h-12 px-6 text-base">
+                Create free account <ArrowRight className="size-4" aria-hidden />
               </ButtonLink>
-              <ButtonLink href="/practice/session?n=5" variant="secondary" className="h-12 px-6 text-base">
-                Try 5 questions
+              <ButtonLink href="/login" variant="secondary" className="h-12 px-6 text-base">
+                Sign in
               </ButtonLink>
             </div>
-            <p className="mt-4 text-sm text-ink-muted">No account needed · all content in this prototype is demo content</p>
+            <p className="mt-4 text-sm text-ink-muted">Free while in development · practice content is currently demo content</p>
           </div>
 
           {/* Static preview of a question card */}

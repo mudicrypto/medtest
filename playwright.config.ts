@@ -1,7 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// End-to-end checks: builds the app, starts it, and clicks through key flows
-// in a real browser at phone and laptop sizes.
+// End-to-end checks against the built app and the LOCAL Supabase stack
+// (`pnpm db:start`, then `pnpm build`). A setup step signs in a test student;
+// the main suites then run signed in at laptop and phone sizes.
+const STORAGE = "playwright/.auth/student.json";
+
 export default defineConfig({
   testDir: "tests/e2e",
   timeout: 30_000,
@@ -14,7 +17,20 @@ export default defineConfig({
     timeout: 60_000,
   },
   projects: [
-    { name: "laptop", use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 860 } } },
-    { name: "phone", use: { ...devices["Pixel 7"] } },
+    { name: "setup", testMatch: /auth\.setup\.ts/ },
+    {
+      name: "laptop",
+      testIgnore: /auth\.(setup|spec)\.ts/,
+      dependencies: ["setup"],
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 860 }, storageState: STORAGE },
+    },
+    {
+      name: "phone",
+      testIgnore: /auth\.(setup|spec)\.ts/,
+      dependencies: ["setup"],
+      use: { ...devices["Pixel 7"], storageState: STORAGE },
+    },
+    // Account flows start signed out.
+    { name: "auth", testMatch: /auth\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
   ],
 });

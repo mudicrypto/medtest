@@ -2,7 +2,7 @@
 
 > **Learn the medicine. Master the Russian exam.**
 >
-> Status: **approved 2026-10-10.** Milestone 1 (clickable prototype) in progress.
+> Status: **approved 2026-10-10.** Milestone 1 (prototype) done; Milestone 2 (accounts) done, awaiting review.
 
 ---
 

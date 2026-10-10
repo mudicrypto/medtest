@@ -2,7 +2,6 @@ import { expect, test, type Page } from "@playwright/test";
 
 const pages = [
   "/",
-  "/login",
   "/dashboard",
   "/practice",
   "/practice/session?n=5",
@@ -15,6 +14,7 @@ const pages = [
   "/analytics",
   "/tutor",
   "/questions/q-card-01",
+  "/settings",
 ];
 
 function trackErrors(page: Page) {
