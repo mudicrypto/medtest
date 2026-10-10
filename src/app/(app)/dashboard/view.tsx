@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, BookOpen, Flame, Languages, RotateCcw, Sparkles, Target, Timer } from "lucide-react";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import { dailyStats, openMistakes, overallAccuracy, streakDays, topicStats } from "@/lib/analytics";
 import { isDue } from "@/lib/srs";
 import type { TopicWithCount } from "@/lib/types";
@@ -10,7 +10,7 @@ import { ButtonLink, Card, PageHeader, ProgressBar, Skeleton, StatTile } from "@
 import { VolumeColumns } from "@/components/charts";
 
 export function DashboardView({ greeting, topics }: { greeting: React.ReactNode; topics: TopicWithCount[] }) {
-  const s = useDemoStore();
+  const s = useProgress();
   if (!s.ready) return <DashboardSkeleton />;
 
   const dueQuestions = Object.entries(s.cards).filter(([id, c]) => id.startsWith("q:") && isDue(c, s.now)).length;
@@ -102,6 +102,14 @@ export function DashboardView({ greeting, topics }: { greeting: React.ReactNode;
             </Link>
           </div>
           <p className="mt-1 text-sm text-ink-muted">Your three lowest-scoring topics.</p>
+          {weakest.length === 0 && (
+            <p className="mt-5 rounded-xl bg-sunken p-4 text-sm text-ink-soft">
+              Answer a few questions and your weakest topics will appear here.{" "}
+              <Link href="/practice" className="font-medium text-accent hover:underline">
+                Start practising
+              </Link>
+            </p>
+          )}
           <ul className="mt-5 space-y-4">
             {weakest.map((t) => (
               <li key={t.slug} className="flex items-center gap-4">

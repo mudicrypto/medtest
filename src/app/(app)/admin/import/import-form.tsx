@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useActionState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { CircleAlert, CircleCheck, FileCheck, LoaderCircle, Upload } from "lucide-react";
 import { Alert } from "@/components/form";
@@ -26,6 +26,11 @@ function Buttons({ canImport, count, pending }: { canImport: boolean; count: num
 export function ImportForm({ sources }: { sources: { id: string; title: string }[] }) {
   const [state, action, pending] = useActionState<ImportState, FormData>(importQuestions, { status: "idle" });
   const clean = state.status === "preview" && !state.rowErrors?.length && (state.validRows ?? 0) > 0;
+  // Until the page's code has loaded, a file chosen would be cleared and a
+  // click would do a plain browser submit, so keep the controls disabled.
+  const [ready, setReady] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- mark hydration complete
+  useEffect(() => setReady(true), []);
 
   return (
     <div className="space-y-4">
@@ -51,6 +56,7 @@ export function ImportForm({ sources }: { sources: { id: string; title: string }
               type="file"
               accept=".csv,text/csv"
               required
+              disabled={!ready}
               className="mt-1.5 block w-full text-sm text-ink-soft file:mr-3 file:h-10 file:rounded-lg file:border-0 file:bg-accent-soft file:px-4 file:text-sm file:font-medium file:text-accent-strong"
             />
           </div>
@@ -70,7 +76,7 @@ export function ImportForm({ sources }: { sources: { id: string; title: string }
               Not listed? <Link href="/admin/sources" className="text-accent hover:underline">Add the source first</Link>.
             </p>
           </div>
-          <Buttons canImport={clean} count={state.validRows ?? 0} pending={pending} />
+          <Buttons canImport={clean} count={state.validRows ?? 0} pending={pending || !ready} />
         </form>
       </Card>
 

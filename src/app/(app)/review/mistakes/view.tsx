@@ -1,13 +1,13 @@
 "use client";
 
 import { CircleCheck, RotateCcw } from "lucide-react";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import { openMistakes } from "@/lib/analytics";
 import { QuestionList } from "@/components/question-list";
 import { ButtonLink, EmptyState, PageHeader, Skeleton } from "@/components/ui";
 
 export function MistakesView() {
-  const store = useDemoStore();
+  const store = useProgress();
   if (!store.ready) return <Skeleton className="h-96" />;
 
   const ids = openMistakes(store.attempts);

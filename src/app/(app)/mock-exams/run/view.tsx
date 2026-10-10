@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, CircleCheck, CircleX, Clock, Flag, Info } from "lucide-react";
-import { useDemoStore, type MockResult } from "@/lib/demo-store";
+import { useProgress, type MockSummary } from "@/lib/progress-store";
 import type { Question, QuestionOption } from "@/lib/types";
 import { blueprints } from "@/demo/blueprints";
 import { startMock, submitMock, type MockGrade } from "@/app/(app)/question-actions";
@@ -22,7 +22,7 @@ function fmt(sec: number) {
 export function MockRunView() {
   const params = useSearchParams();
   const blueprint = blueprints.find((b) => b.id === params.get("b")) ?? blueprints[0];
-  const store = useDemoStore();
+  const store = useProgress();
 
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -34,7 +34,7 @@ export function MockRunView() {
   const [answers, setAnswers] = useState<Record<string, OptionId>>({});
   const [flags, setFlags] = useState<string[]>([]);
   const [confirming, setConfirming] = useState(false);
-  const [result, setResult] = useState<{ summary: MockResult; grades: MockGrade[] } | null>(null);
+  const [result, setResult] = useState<{ summary: MockSummary; grades: MockGrade[] } | null>(null);
   const ids = useMemo(() => questions?.map((q) => q.id) ?? null, [questions]);
 
   // The server picks the exam's questions once, on mount.
@@ -57,7 +57,7 @@ export function MockRunView() {
 
   const remaining = Math.max(0, blueprint.timeLimitMinutes * 60 - Math.floor((now - startedAt) / 1000));
 
-  const { recordAttempt, saveMock } = store;
+  const { recordAttempt, addMock } = store;
   const submit = useCallback(() => {
     if (!ids || result || submitting) return;
     setSubmitError(null);
@@ -65,22 +65,13 @@ export function MockRunView() {
     // with the full mock exam milestone.)
     startSubmitting(async () => {
       try {
-        const grades = await submitMock(ids, answers);
+        const { grades, summary, cards } = await submitMock(blueprint.id, ids, answers, (Date.now() - startedAt) / 1000);
         for (const g of grades) {
-          if (g.selected) recordAttempt({ questionId: g.questionId, topic: g.topic, selected: g.selected, correct: g.isCorrect, mode: "mock" });
+          if (g.selected) {
+            recordAttempt({ questionId: g.questionId, topic: g.topic, selected: g.selected, correct: g.isCorrect, mode: "mock" }, cards[g.questionId]);
+          }
         }
-        const score = grades.filter((g) => g.isCorrect).length;
-        const summary: MockResult = {
-          blueprintId: blueprint.id,
-          questionIds: ids,
-          answers,
-          score,
-          total: ids.length,
-          passed: (score / ids.length) * 100 >= blueprint.passThresholdPct,
-          submittedAt: Date.now(),
-          durationSec: Math.round((Date.now() - startedAt) / 1000),
-        };
-        saveMock(summary);
+        addMock(summary, cards);
         setConfirming(false);
         setResult({ summary, grades });
         window.scrollTo({ top: 0 });
@@ -88,7 +79,7 @@ export function MockRunView() {
         setSubmitError("We couldn't submit your exam. Check your connection and try again — your answers are kept.");
       }
     });
-  }, [ids, result, submitting, answers, recordAttempt, saveMock, blueprint, startedAt]);
+  }, [ids, result, submitting, answers, recordAttempt, addMock, blueprint, startedAt]);
 
   // Countdown; auto-submit when time runs out.
   useEffect(() => {
@@ -310,7 +301,7 @@ export function MockRunView() {
   );
 }
 
-function Results({ result, grades, questions }: { result: MockResult; grades: MockGrade[]; questions: Question[] }) {
+function Results({ result, grades, questions }: { result: MockSummary; grades: MockGrade[]; questions: Question[] }) {
   const pct = Math.round((result.score / result.total) * 100);
   const blueprint = blueprints.find((b) => b.id === result.blueprintId)!;
 

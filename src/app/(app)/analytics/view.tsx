@@ -1,14 +1,13 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import { dailyStats, overallAccuracy, streakDays, topicStats } from "@/lib/analytics";
 import type { TopicWithCount } from "@/lib/types";
 import { AccuracyTrend, TopicBars, VolumeColumns } from "@/components/charts";
-import { Button, Card, PageHeader, Skeleton, StatTile } from "@/components/ui";
+import { Card, PageHeader, Skeleton, StatTile } from "@/components/ui";
 
 export function AnalyticsView({ topics }: { topics: TopicWithCount[] }) {
-  const s = useDemoStore();
+  const s = useProgress();
   if (!s.ready) return <Skeleton className="h-[600px]" />;
 
   const days = dailyStats(s.attempts, 14, s.now);
@@ -25,7 +24,7 @@ export function AnalyticsView({ topics }: { topics: TopicWithCount[] }) {
       <PageHeader
         eyebrow="Analytics"
         title="Your progress"
-        description="Based on the seeded demo history plus anything you answer in this browser."
+        description="Based on every answer you've given, saved to your account."
       />
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -58,17 +57,6 @@ export function AnalyticsView({ topics }: { topics: TopicWithCount[] }) {
         <TopicBars stats={topicStats(s.attempts, topics)} />
       </Card>
 
-      <div className="mt-10 flex flex-col items-start gap-2 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-ink-muted">Demo data is stored only in this browser.</p>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            if (confirm("Reset all demo progress to the starting sample?")) s.reset();
-          }}
-        >
-          <RotateCcw className="size-4" aria-hidden /> Reset demo data
-        </Button>
-      </div>
     </>
   );
 }

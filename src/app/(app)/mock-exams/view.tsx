@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { ArrowRight, Clock, Info, ListChecks, Target } from "lucide-react";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import { blueprints } from "@/demo/blueprints";
 import { Badge, ButtonLink, Card, PageHeader } from "@/components/ui";
 
 export function MockExamsView() {
-  const store = useDemoStore();
+  const store = useProgress();
 
   return (
     <>

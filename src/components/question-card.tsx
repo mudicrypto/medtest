@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { Bookmark, BookmarkCheck, CircleCheck, CircleX, Languages, Sparkles } from "lucide-react";
 import type { Question, QuestionKey, QuestionOption } from "@/lib/types";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import { submitAnswer } from "@/app/(app)/question-actions";
 import { SourceBadge } from "./source-badge";
 import { Badge, Button, Card, cn } from "./ui";
@@ -23,7 +23,7 @@ export function QuestionCard({
   /** Rendered after the answer is revealed, e.g. a "Next" button. */
   footer?: React.ReactNode;
 }) {
-  const store = useDemoStore();
+  const store = useProgress();
   const [selected, setSelected] = useState<OptionId | null>(null);
   const [result, setResult] = useState<{ correct: boolean; key: QuestionKey } | null>(null);
   const [tutorOpen, setTutorOpen] = useState(false);
@@ -41,7 +41,7 @@ export function QuestionCard({
     startChecking(async () => {
       try {
         const r = await submitAnswer(question.id, selected, mode);
-        recordAttempt({ questionId: question.id, topic: r.topic, selected, correct: r.correct, mode });
+        recordAttempt({ questionId: question.id, topic: r.topic, selected, correct: r.correct, mode }, r.card);
         setResult(r);
         onAnswered?.(r.correct);
       } catch {
@@ -83,6 +83,7 @@ export function QuestionCard({
               <button
                 type="button"
                 onClick={() => store.setShowRussian(!store.showRussian)}
+                disabled={!store.ready}
                 aria-pressed={store.showRussian}
                 className={cn(
                   "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium",
@@ -96,6 +97,8 @@ export function QuestionCard({
             <button
               type="button"
               onClick={() => store.toggleBookmark(question.id)}
+              // Wait for saved progress to load so the toggle starts from the right state.
+              disabled={!store.ready}
               aria-pressed={bookmarked}
               className={cn(
                 "grid size-8 place-items-center rounded-lg",

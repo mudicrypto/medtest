@@ -2,7 +2,7 @@
 
 > **Learn the medicine. Master the Russian exam.**
 >
-> Status: **approved 2026-10-10.** Milestone 1 (prototype) done; Milestone 2 (accounts) done; Milestone 3 (question bank, server grading, admin import) done, awaiting review.
+> Status: **approved 2026-10-10.** Milestone 1 (prototype) done; Milestone 2 (accounts) done; Milestone 3 (question bank, server grading, admin import) done; Milestone 4 (progress saved per account) done, awaiting review.
 
 ---
 

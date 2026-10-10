@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useProgress } from "@/lib/progress-store";
 import type { CurrentUser } from "@/lib/auth";
 import type { FormState } from "@/app/(auth)/actions";
 import { Alert, Field, SubmitButton } from "@/components/form";
@@ -8,6 +9,11 @@ import { updateProfile } from "./actions";
 
 export function ProfileForm({ user }: { user: Omit<CurrentUser, "id" | "role"> }) {
   const [state, action] = useActionState<FormState, FormData>(updateProfile, { status: "idle" });
+  // Reload progress after saving so the Russian-text preference applies everywhere.
+  const { retry } = useProgress();
+  useEffect(() => {
+    if (state.status === "success") retry();
+  }, [state, retry]);
 
   return (
     <form action={action} className="space-y-5" noValidate>
@@ -38,7 +44,7 @@ export function ProfileForm({ user }: { user: Omit<CurrentUser, "id" | "role"> }
         />
         <span>
           <span className="block text-sm font-medium text-ink">Show Russian text by default</span>
-          <span className="block text-xs text-ink-muted">Saved to your account. Practice screens start using it in the next milestone.</span>
+          <span className="block text-xs text-ink-muted">You can also switch it on any question with the RU button.</span>
         </span>
       </label>
       <div className="sm:w-48">

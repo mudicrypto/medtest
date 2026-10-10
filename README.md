@@ -5,13 +5,15 @@
 Exam preparation for English-speaking medical graduates taking Russian Primary
 Accreditation in General Medicine (Лечебное дело).
 
-**Status: Milestone 3.** Real accounts, plus a database-backed question bank:
+**Status: Milestone 4.** Real accounts, plus a database-backed question bank:
 - questions and answer keys live in Supabase, and **every answer is graded on the server**;
 - each question records its source, rights and medical-review status;
 - the admin area imports CSV spreadsheets and handles the review workflow.
 
-Student progress (history, bookmarks, review schedule) is still kept in the
-browser; it moves to the database in Milestone 4.
+Each student's progress is saved to their account, so it follows them across
+devices: answer history, mistakes, bookmarks, the review schedule for questions
+and terms, mock exam results, and the Russian-text preference. Terminology cards
+and mock exam formats are still demo content.
 
 - Plan: [docs/PROPOSAL.md](docs/PROPOSAL.md)
 - Connect your Supabase project: [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
@@ -50,7 +52,7 @@ local URL and publishable key printed by `pnpm db:start` into `.env.local`.
 | `pnpm lint` | Looks for common code mistakes |
 | `pnpm typecheck` | Checks TypeScript types |
 | `pnpm test` | Unit tests: scheduling, analytics, demo content integrity |
-| `pnpm test:db` | Database security tests: profiles, question visibility, answer keys, grading, import (needs `pnpm db:start`) |
+| `pnpm test:db` | Database security tests: profiles, question visibility, answer keys, grading, import, private progress (needs `pnpm db:start`) |
 | `pnpm build` | Production build, which fails if anything is broken |
 | `pnpm test:e2e` | Clicks through the built app in a real browser, including sign-up via the test inbox (needs `pnpm db:start` and `pnpm build`) |
 | `pnpm db:types` | Regenerates `src/lib/supabase/database.types.ts` from the local database |
@@ -69,5 +71,6 @@ local URL and publishable key printed by `pnpm db:start` into `.env.local`.
 - `src/app/(app)/question-actions.ts` holds the server functions students call to load questions and submit answers.
 - `src/lib/content/` holds the CSV format and validation, plus question queries.
 - `content/demo-questions.csv` holds the 18 demo questions (also a worked example of the CSV format).
-- `src/demo/` holds **demo-only** terms, seeded progress history and mock formats.
+- `src/lib/progress-store.tsx` holds the student's progress in the browser while they use the app; every change is saved through `src/app/(app)/progress-actions.ts`.
+- `src/demo/` holds **demo-only** terms and mock exam formats.
 - `tests/` holds unit tests, database security tests and browser tests.

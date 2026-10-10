@@ -5,8 +5,6 @@ import type { Attempt } from "../../src/lib/types";
 import { readFileSync } from "node:fs";
 import { topics } from "../../src/demo/topics";
 import { terms } from "../../src/demo/terms";
-import { seedHistory } from "../../src/demo/history";
-import { demoQuestionRefs } from "../../src/demo/question-refs";
 import { parseQuestionsCsv, toCsv, CSV_COLUMNS, type CsvRecord } from "../../src/lib/content/csv";
 
 const DAY = 86_400_000;
@@ -43,7 +41,8 @@ describe("spaced repetition", () => {
 });
 
 describe("analytics", () => {
-  const topicOf = (id: string) => demoQuestionRefs.find((q) => q.id === id)!.topic;
+  const topicOf = (id: string) =>
+    ({ card: "cardiology", pulm: "pulmonology", gi: "gastroenterology" })[id.split("-")[1] as "card" | "pulm" | "gi"];
   const a = (questionId: string, correct: boolean, at: number): Attempt => ({
     questionId,
     topic: topicOf(questionId),
@@ -101,10 +100,6 @@ describe("demo question bank (content/demo-questions.csv)", () => {
       expect(["A", "B", "C", "D"]).toContain(r.key.correct);
       expect(r.key.explanation_en.length, r.slug).toBeGreaterThan(40);
     }
-  });
-
-  it("matches the ids used for the seeded demo history", () => {
-    expect(rows.map((r) => ({ id: r.slug, topic: r.topic }))).toEqual(demoQuestionRefs);
   });
 
   it("Russian text contains no Latin letters mixed into Cyrillic words", () => {
@@ -183,15 +178,9 @@ describe("CSV import validation", () => {
   });
 });
 
-describe("demo terms and history", () => {
-  it("term ids are unique", () => {
+describe("demo terms", () => {
+  it("term ids are unique and valid card ids", () => {
     expect(new Set(terms.map((t) => t.id)).size).toBe(terms.length);
-  });
-
-  it("seeded history is deterministic and only references demo questions", () => {
-    const h1 = seedHistory(NOW);
-    expect(h1).toEqual(seedHistory(NOW));
-    expect(h1.length).toBeGreaterThan(30);
-    for (const at of h1) expect(demoQuestionRefs.some((q) => q.id === at.questionId && q.topic === at.topic)).toBe(true);
+    for (const t of terms) expect(t.id).toMatch(/^[a-z0-9][a-z0-9-]{0,79}$/);
   });
 });

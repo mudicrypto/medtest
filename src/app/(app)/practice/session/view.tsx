@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, CircleCheck, CircleX, X } from "lucide-react";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import type { Question } from "@/lib/types";
 import { useQuestions } from "@/lib/use-questions";
 import { fetchQuestionRefs } from "@/app/(app)/question-actions";
@@ -22,7 +22,7 @@ export function SessionView() {
 }
 
 function Session({ params }: { params: URLSearchParams }) {
-  const store = useDemoStore();
+  const store = useProgress();
   const [ids, setIds] = useState<string[] | null>(null);
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<Record<string, boolean>>({});

@@ -25,7 +25,14 @@ export async function createClient() {
       },
       setAll(cookiesToSet) {
         try {
-          for (const { name, value, options } of cookiesToSet) cookieStore.set(name, value, options);
+          for (const { name, value, options } of cookiesToSet) {
+            // Only write cookies that actually changed. Any cookie write inside
+            // a server action makes Next.js refresh the whole page, which
+            // would reset forms (e.g. clear a chosen file) for no reason.
+            if (cookieStore.get(name)?.value === value) continue;
+            if (!value && !cookieStore.has(name)) continue;
+            cookieStore.set(name, value, options);
+          }
         } catch {
           // Server Components can't set cookies. That's fine: the proxy
           // (src/proxy.ts) refreshes the session cookie on every request.

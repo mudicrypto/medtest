@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ArrowRight, CalendarClock, CircleCheck } from "lucide-react";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import { isDue } from "@/lib/srs";
 import { terms } from "@/demo/terms";
 import { useQuestions } from "@/lib/use-questions";
@@ -13,7 +13,7 @@ import { Button, ButtonLink, EmptyState, PageHeader, ProgressBar, Skeleton } fro
 const termById = Object.fromEntries(terms.map((t) => [t.id, t]));
 
 export function ReviewView() {
-  const store = useDemoStore();
+  const store = useProgress();
   const [queue, setQueue] = useState<string[] | null>(null);
   const [index, setIndex] = useState(0);
 
@@ -40,7 +40,7 @@ function ReviewQueue({
   index: number;
   setIndex: React.Dispatch<React.SetStateAction<number>>;
 }) {
-  const store = useDemoStore();
+  const store = useProgress();
   // Load the due questions from the server; drop any no longer available.
   const questionIds = snapshot ? snapshot.filter((id) => id.startsWith("q:")).map((id) => id.slice(2)) : null;
   const loaded = useQuestions(questionIds);

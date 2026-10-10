@@ -49,6 +49,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"bookmarks": {
+                  Row: {
+                    "created_at": string,"question_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"question_id": string,"user_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"question_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "bookmarks_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: false
+      referencedRelation: "questions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "bookmarks_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"content_sources": {
                   Row: {
                     "created_at": string,"created_by": string | null,"granted_by": string | null,"granted_on": string | null,"id": string,"license_notes": string | null,"permission_evidence": string | null,"publisher": string | null,"rights_status": Database["public"]['Enums']["rights_status"],"title": string,"url": string | null
@@ -64,6 +90,26 @@ isOneToOne: false
                     {
       foreignKeyName: "content_sources_created_by_fkey"
       columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"mock_attempts": {
+                  Row: {
+                    "answers": NonNullable<Json>,"blueprint_id": string,"duration_sec": number,"id": string,"passed": boolean,"question_slugs": (string)[],"score": number,"submitted_at": string,"total": number,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answers"?: NonNullable<Json>,"blueprint_id": string,"duration_sec": number,"id"?: string,"passed": boolean,"question_slugs": (string)[],"score": number,"submitted_at"?: string,"total": number,"user_id"?: string
+                  }
+                  Update: {
+                    "answers"?: NonNullable<Json>,"blueprint_id"?: string,"duration_sec"?: number,"id"?: string,"passed"?: boolean,"question_slugs"?: (string)[],"score"?: number,"submitted_at"?: string,"total"?: number,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "mock_attempts_user_id_fkey"
+      columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "profiles"
       referencedColumns: ["id"]
@@ -155,6 +201,26 @@ isOneToOne: false
       referencedColumns: ["slug"]
     }
                   ]
+                },"srs_cards": {
+                  Row: {
+                    "due": string,"ease": number,"interval_days": number,"item_id": string,"item_type": Database["public"]['Enums']["srs_item"],"lapses": number,"reps": number,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "due": string,"ease"?: number,"interval_days"?: number,"item_id": string,"item_type": Database["public"]['Enums']["srs_item"],"lapses"?: number,"reps"?: number,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "due"?: string,"ease"?: number,"interval_days"?: number,"item_id"?: string,"item_type"?: Database["public"]['Enums']["srs_item"],"lapses"?: number,"reps"?: number,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "srs_cards_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"topics": {
                   Row: {
                     "name_en": string,"name_ru": string,"slug": string,"sort_order": number
@@ -204,7 +270,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "attempt_mode": "practice"|"review"|"mock","content_origin": "original_practice"|"official_verified"|"adapted"|"demo","review_status": "draft"|"in_review"|"approved"|"retired","rights_status": "owned"|"licensed"|"public_domain"|"permission_pending"|"not_cleared","user_role": "student"|"reviewer"|"admin"
+            "attempt_mode": "practice"|"review"|"mock","content_origin": "original_practice"|"official_verified"|"adapted"|"demo","review_status": "draft"|"in_review"|"approved"|"retired","rights_status": "owned"|"licensed"|"public_domain"|"permission_pending"|"not_cleared","srs_item": "question"|"term","user_role": "student"|"reviewer"|"admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -324,7 +390,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "attempt_mode": ["practice", "review", "mock"],"content_origin": ["original_practice", "official_verified", "adapted", "demo"],"review_status": ["draft", "in_review", "approved", "retired"],"rights_status": ["owned", "licensed", "public_domain", "permission_pending", "not_cleared"],"user_role": ["student", "reviewer", "admin"]
+            "attempt_mode": ["practice", "review", "mock"],"content_origin": ["original_practice", "official_verified", "adapted", "demo"],"review_status": ["draft", "in_review", "approved", "retired"],"rights_status": ["owned", "licensed", "public_domain", "permission_pending", "not_cleared"],"srs_item": ["question", "term"],"user_role": ["student", "reviewer", "admin"]
           }
         }
 } as const

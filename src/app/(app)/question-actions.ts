@@ -8,6 +8,9 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getQuestions, listQuestionRefs } from "@/lib/content/queries";
+import { gradeCardFor, type MockSummary } from "@/lib/progress/server";
+import { gradeFromAnswer, type SrsCard } from "@/lib/srs";
+import { blueprints } from "@/demo/blueprints";
 import type { GradeResult, Question, QuestionOption } from "@/lib/types";
 
 const slug = z.string().regex(/^[a-z0-9][a-z0-9-]{1,79}$/);
@@ -29,8 +32,8 @@ export async function submitAnswer(
   questionId: string,
   selected: QuestionOption["id"],
   attemptMode: "practice" | "review" = "practice",
-): Promise<GradeResult> {
-  await getCurrentUser();
+): Promise<GradeResult & { card: SrsCard }> {
+  const user = await getCurrentUser();
   const supabase = await createClient();
   const { data, error } = await supabase
     .rpc("submit_answer", {
@@ -40,7 +43,10 @@ export async function submitAnswer(
     })
     .single();
   if (error || !data) throw new Error("We couldn't check that answer. Please try again.");
+  // Reschedule this question in the student's review queue.
+  const card = await gradeCardFor(supabase, user.id, "question", questionId, gradeFromAnswer(data.is_correct));
   return {
+    card,
     correct: data.is_correct,
     topic: data.topic,
     key: {
@@ -74,8 +80,22 @@ export interface MockGrade {
   explanationEn: string;
 }
 
-export async function submitMock(questionIds: string[], answers: Record<string, string>): Promise<MockGrade[]> {
-  await getCurrentUser();
+export interface MockSubmission {
+  grades: MockGrade[];
+  summary: MockSummary;
+  /** Updated review cards for answered questions, keyed by slug. */
+  cards: Record<string, SrsCard>;
+}
+
+export async function submitMock(
+  blueprintId: string,
+  questionIds: string[],
+  answers: Record<string, string>,
+  durationSec: number,
+): Promise<MockSubmission> {
+  const user = await getCurrentUser();
+  const blueprint = blueprints.find((b) => b.id === blueprintId);
+  if (!blueprint) throw new Error("Unknown exam format");
   const ids = slugList.min(1).parse(questionIds);
   const clean = Object.fromEntries(
     Object.entries(z.record(slug, position).parse(answers)).filter(([k]) => ids.includes(k)),
@@ -84,7 +104,7 @@ export async function submitMock(questionIds: string[], answers: Record<string, 
   const { data, error } = await supabase.rpc("grade_mock", { p_slugs: ids, p_answers: clean });
   if (error || !data) throw new Error("We couldn't submit your exam. Please try again.");
   const bySlug = new Map(data.map((r) => [r.slug, r]));
-  return ids
+  const grades: MockGrade[] = ids
     .map((id) => bySlug.get(id))
     .filter((r) => !!r)
     .map((r) => ({
@@ -95,4 +115,37 @@ export async function submitMock(questionIds: string[], answers: Record<string, 
       isCorrect: r.is_correct,
       explanationEn: r.explanation_en,
     }));
+
+  // The score comes from the server's grading, never from the browser.
+  const score = grades.filter((g) => g.isCorrect).length;
+  const total = grades.length;
+  const summary: MockSummary = {
+    blueprintId: blueprint.id,
+    questionIds: grades.map((g) => g.questionId),
+    answers: clean,
+    score,
+    total,
+    passed: total > 0 && (score / total) * 100 >= blueprint.passThresholdPct,
+    submittedAt: Date.now(),
+    durationSec: Math.max(0, Math.min(24 * 3600, Math.round(z.number().parse(durationSec)))),
+  };
+  if (total > 0) {
+    const { error: saveError } = await supabase.from("mock_attempts").insert({
+      user_id: user.id,
+      blueprint_id: summary.blueprintId,
+      question_slugs: summary.questionIds,
+      answers: summary.answers,
+      score,
+      total,
+      passed: summary.passed,
+      duration_sec: summary.durationSec,
+    });
+    if (saveError) throw new Error("Your exam was graded but the result couldn't be saved. Please try again.");
+  }
+
+  const cards: Record<string, SrsCard> = {};
+  for (const g of grades.filter((g) => g.selected)) {
+    cards[g.questionId] = await gradeCardFor(supabase, user.id, "question", g.questionId, gradeFromAnswer(g.isCorrect));
+  }
+  return { grades, summary, cards };
 }

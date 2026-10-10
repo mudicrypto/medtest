@@ -1,12 +1,12 @@
 "use client";
 
 import { Bookmark, BookOpen } from "lucide-react";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import { QuestionList } from "@/components/question-list";
 import { ButtonLink, EmptyState, PageHeader, Skeleton } from "@/components/ui";
 
 export function BookmarksView() {
-  const store = useDemoStore();
+  const store = useProgress();
   if (!store.ready) return <Skeleton className="h-96" />;
   const ids = [...store.bookmarks].reverse();
 

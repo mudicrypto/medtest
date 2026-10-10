@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CircleCheck, Search } from "lucide-react";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import { isDue } from "@/lib/srs";
 import { terms } from "@/demo/terms";
 import { topicBySlug } from "@/demo/topics";
@@ -12,7 +12,7 @@ import { Card, PageHeader, Skeleton, cn } from "@/components/ui";
 type Tab = "study" | "browse";
 
 export function TerminologyView() {
-  const store = useDemoStore();
+  const store = useProgress();
   const [tab, setTab] = useState<Tab>("study");
   const [direction, setDirection] = useState<"ru-en" | "en-ru">("ru-en");
 
@@ -59,7 +59,7 @@ export function TerminologyView() {
 }
 
 function Study({ direction }: { direction: "ru-en" | "en-ru" }) {
-  const store = useDemoStore();
+  const store = useProgress();
   // Due cards first, then new (never-seen) terms. Snapshot once per visit.
   const [queue] = useState(() => {
     const due = terms.filter((t) => store.cards[`t:${t.id}`] && isDue(store.cards[`t:${t.id}`], store.now));
@@ -108,7 +108,7 @@ function Study({ direction }: { direction: "ru-en" | "en-ru" }) {
 }
 
 function Browse() {
-  const store = useDemoStore();
+  const store = useProgress();
   const [q, setQ] = useState("");
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();

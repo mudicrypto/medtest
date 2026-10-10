@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Languages } from "lucide-react";
-import { useDemoStore } from "@/lib/demo-store";
+import { useProgress } from "@/lib/progress-store";
 import { topicStats } from "@/lib/analytics";
 import type { TopicWithCount } from "@/lib/types";
 import { Button, Card, cn } from "@/components/ui";
@@ -12,7 +12,7 @@ const sizes = [5, 10, 20] as const;
 
 export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
   const router = useRouter();
-  const store = useDemoStore();
+  const store = useProgress();
   const [picked, setPicked] = useState<string[]>([]);
   const [size, setSize] = useState<(typeof sizes)[number]>(10);
 

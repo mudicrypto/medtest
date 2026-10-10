@@ -3,7 +3,6 @@ import { defineConfig, devices } from "@playwright/test";
 // End-to-end checks against the built app and the LOCAL Supabase stack
 // (`pnpm db:start`, then `pnpm build`). A setup step signs in a test student;
 // the main suites then run signed in at laptop and phone sizes.
-const STORAGE = "playwright/.auth/student.json";
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -20,17 +19,17 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "laptop",
-      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec)\.ts/,
+      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec)\.ts/,
       dependencies: ["setup"],
-      use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 860 }, storageState: STORAGE },
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 860 }, storageState: "playwright/.auth/student-laptop.json" },
     },
     {
       name: "phone",
-      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec)\.ts/,
+      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec)\.ts/,
       dependencies: ["setup"],
-      use: { ...devices["Pixel 7"], storageState: STORAGE },
+      use: { ...devices["Pixel 7"], storageState: "playwright/.auth/student-phone.json" },
     },
     // Account flows start signed out.
-    { name: "auth", testMatch: /(auth|admin|bundle)\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
+    { name: "auth", testMatch: /(auth|admin|bundle|progress)\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
   ],
 });

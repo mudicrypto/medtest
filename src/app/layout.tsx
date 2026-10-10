@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Source_Serif_4 } from "next/font/google";
-import { DemoStoreProvider } from "@/lib/demo-store";
 import "./globals.css";
 
 // Both families include Cyrillic so Russian text renders in the same typeface.
@@ -31,7 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${sourceSerif.variable} h-full antialiased`}>
       <body className="min-h-full">
-        <DemoStoreProvider>{children}</DemoStoreProvider>
+        {children}
       </body>
     </html>
   );

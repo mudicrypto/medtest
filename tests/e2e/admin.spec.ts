@@ -54,6 +54,7 @@ test("admin: check a CSV, fix errors, import, approve, and the question reaches 
 
   // 1. A file with a broken row is reported, and can't be imported.
   await page.goto("/admin/import");
+  await expect(page.getByLabel("CSV file")).toBeEnabled();
   await page.getByLabel("CSV file").setInputFiles(csvFile([base(slug), { ...base(`${slug}-b`), correct: "E", topic: "astrology" }]));
   await page.getByRole("button", { name: "Check file" }).click();
   await expect(page.getByText("1 row needs fixing")).toBeVisible();

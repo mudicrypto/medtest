@@ -120,9 +120,9 @@ export function AppShell({ children, account }: { children: React.ReactNode; acc
         <div className="mt-auto space-y-3">
           <div className="rounded-xl border border-[#fedf89] bg-warning-soft p-3 text-xs leading-relaxed text-warning">
             <p className="flex items-center gap-1.5 font-semibold">
-              <FlaskConical className="size-3.5" aria-hidden /> Prototype
+              <FlaskConical className="size-3.5" aria-hidden /> Early access
             </p>
-            <p className="mt-1">Progress is saved only in this browser for now.</p>
+            <p className="mt-1">Demo content is labelled DEMO. Exam formats are not yet official.</p>
           </div>
           {account}
         </div>
@@ -160,7 +160,7 @@ export function AppShell({ children, account }: { children: React.ReactNode; acc
         )}
 
         <div className="border-b border-[#fedf89] bg-warning-soft px-4 py-2 text-center text-xs text-warning lg:hidden">
-          Prototype · progress saved in this browser only
+          Early access · demo content is labelled DEMO
         </div>
 
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pb-28 pt-6 sm:px-6 sm:pt-8 lg:px-10 lg:pb-16 lg:pt-12">

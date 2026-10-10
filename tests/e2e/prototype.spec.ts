@@ -101,12 +101,17 @@ test("terminology flashcards: reveal and grade", async ({ page }) => {
   await expect(page.getByText("желтуха")).toBeVisible();
 });
 
-test("progress persists across reloads in this browser", async ({ page }) => {
+test("bookmarks are saved to the account", async ({ page }) => {
+  // The practice-flow test above bookmarked one question for this student.
   await page.goto("/bookmarks");
-  await expect(page.getByText(/Practise these/)).toBeVisible();
-  const before = await page.locator("main a[href^='/questions/']").count();
+  const links = page.locator("main a[href^='/questions/']");
+  await expect(links.first()).toBeVisible();
+  const before = await links.count();
   await page.goto("/questions/q-ped-02");
-  await page.getByRole("button", { name: "Bookmark question" }).click();
+  await page.getByRole("main").getByRole("button", { name: "Bookmark question" }).click();
+  await expect(page.getByRole("main").getByRole("button", { name: "Remove bookmark" })).toBeVisible();
+  await page.waitForTimeout(300);
+  await page.reload();
   await page.goto("/bookmarks");
-  await expect(page.locator("main a[href^='/questions/']")).toHaveCount(before + 1);
+  await expect(links).toHaveCount(before + 1);
 });
