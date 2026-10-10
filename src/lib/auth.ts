@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Database } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
 
@@ -52,4 +52,18 @@ export function safeNext(next: unknown, fallback = "/dashboard"): string {
     return fallback;
   }
   return next;
+}
+
+/** For reviewer/admin pages: anyone else gets a plain "not found". */
+export async function requireStaff(): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (user.role !== "admin" && user.role !== "reviewer") notFound();
+  return user;
+}
+
+/** For actions that change content. */
+export async function requireAdmin(): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (user.role !== "admin") notFound();
+  return user;
 }

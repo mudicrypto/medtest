@@ -1,13 +1,24 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getCurrentUser } from "@/lib/auth";
-import { DashboardView } from "./view";
+import { listTopicsWithCounts } from "@/lib/content/queries";
+import { DashboardSkeleton, DashboardView } from "./view";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
 export default function Page() {
   return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <Dashboard />
+    </Suspense>
+  );
+}
+
+async function Dashboard() {
+  const topics = await listTopicsWithCounts();
+  return (
     <DashboardView
+      topics={topics}
       greeting={
         <Suspense fallback="Welcome back">
           <Greeting />
@@ -26,7 +37,11 @@ async function Greeting() {
       Welcome back, {first}
       {days !== null && (
         <span className="mt-1.5 block text-sm font-normal tracking-normal text-ink-muted">
-          {days > 0 ? `${days} ${days === 1 ? "day" : "days"} until your exam` : days === 0 ? "Your exam is today — good luck!" : "Exam date passed — update it in Settings"}
+          {days > 0
+            ? `${days} ${days === 1 ? "day" : "days"} until your exam`
+            : days === 0
+              ? "Your exam is today — good luck!"
+              : "Exam date passed — update it in Settings"}
         </span>
       )}
     </>

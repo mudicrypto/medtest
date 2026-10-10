@@ -1,4 +1,4 @@
-import type { Attempt, Question, Topic } from "@/lib/types";
+import type { Attempt, Topic } from "@/lib/types";
 
 export interface TopicStat {
   slug: string;
@@ -9,13 +9,9 @@ export interface TopicStat {
   accuracy: number | null;
 }
 
-export function topicStats(
-  attempts: Attempt[],
-  topics: Topic[],
-  questionById: Record<string, Question>,
-): TopicStat[] {
+export function topicStats(attempts: Attempt[], topics: Topic[]): TopicStat[] {
   return topics.map((t) => {
-    const mine = attempts.filter((a) => questionById[a.questionId]?.topic === t.slug);
+    const mine = attempts.filter((a) => a.topic === t.slug);
     const correct = mine.filter((a) => a.correct).length;
     return {
       slug: t.slug,

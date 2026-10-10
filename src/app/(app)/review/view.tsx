@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { ArrowRight, CalendarClock, CircleCheck } from "lucide-react";
 import { useDemoStore } from "@/lib/demo-store";
 import { isDue } from "@/lib/srs";
-import { questionById } from "@/demo/questions";
 import { terms } from "@/demo/terms";
+import { useQuestions } from "@/lib/use-questions";
 import { QuestionCard } from "@/components/question-card";
 import { TermFlashcard } from "@/components/flashcard";
 import { Button, ButtonLink, EmptyState, PageHeader, ProgressBar, Skeleton } from "@/components/ui";
@@ -21,14 +21,33 @@ export function ReviewView() {
   useEffect(() => {
     if (!store.ready || queue) return;
     const due = Object.entries(store.cards)
-      .filter(([id, c]) => isDue(c, store.now) && (questionById[id.slice(2)] || termById[id.slice(2)]))
+      .filter(([id, c]) => isDue(c, store.now) && (id.startsWith("q:") || termById[id.slice(2)]))
       .sort(([, a], [, b]) => a.due - b.due)
       .map(([id]) => id);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- snapshot queue once data is loaded
     setQueue(due);
   }, [store.ready, store.cards, store.now, queue]);
 
-  if (!queue) return <Skeleton className="h-[480px]" />;
+  return <ReviewQueue queue={queue} index={index} setIndex={setIndex} />;
+}
+
+function ReviewQueue({
+  queue: snapshot,
+  index,
+  setIndex,
+}: {
+  queue: string[] | null;
+  index: number;
+  setIndex: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  const store = useDemoStore();
+  // Load the due questions from the server; drop any no longer available.
+  const questionIds = snapshot ? snapshot.filter((id) => id.startsWith("q:")).map((id) => id.slice(2)) : null;
+  const loaded = useQuestions(questionIds);
+
+  if (!snapshot || loaded.status === "loading") return <Skeleton className="h-[480px]" />;
+  const questionById = loaded.status === "ready" ? new Map(loaded.questions.map((q) => [q.id, q])) : new Map();
+  const queue = snapshot.filter((id) => !id.startsWith("q:") || questionById.has(id.slice(2)));
 
   const header = (
     <PageHeader
@@ -81,7 +100,7 @@ export function ReviewView() {
       {isQuestion ? (
         <QuestionCard
           key={id}
-          question={questionById[id.slice(2)]}
+          question={questionById.get(id.slice(2))!}
           mode="review"
           footer={
             <Button onClick={next} autoFocus>

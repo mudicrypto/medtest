@@ -20,17 +20,17 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "laptop",
-      testIgnore: /auth\.(setup|spec)\.ts/,
+      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec)\.ts/,
       dependencies: ["setup"],
       use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 860 }, storageState: STORAGE },
     },
     {
       name: "phone",
-      testIgnore: /auth\.(setup|spec)\.ts/,
+      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec)\.ts/,
       dependencies: ["setup"],
       use: { ...devices["Pixel 7"], storageState: STORAGE },
     },
     // Account flows start signed out.
-    { name: "auth", testMatch: /auth\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
+    { name: "auth", testMatch: /(auth|admin|bundle)\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
   ],
 });

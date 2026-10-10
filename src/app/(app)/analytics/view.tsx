@@ -3,12 +3,11 @@
 import { RotateCcw } from "lucide-react";
 import { useDemoStore } from "@/lib/demo-store";
 import { dailyStats, overallAccuracy, streakDays, topicStats } from "@/lib/analytics";
-import { topics } from "@/demo/topics";
-import { questionById } from "@/demo/questions";
+import type { TopicWithCount } from "@/lib/types";
 import { AccuracyTrend, TopicBars, VolumeColumns } from "@/components/charts";
 import { Button, Card, PageHeader, Skeleton, StatTile } from "@/components/ui";
 
-export function AnalyticsView() {
+export function AnalyticsView({ topics }: { topics: TopicWithCount[] }) {
   const s = useDemoStore();
   if (!s.ready) return <Skeleton className="h-[600px]" />;
 
@@ -19,6 +18,7 @@ export function AnalyticsView() {
   const accPrev = overallAccuracy(prev7);
   const delta = accNow !== null && accPrev !== null ? accNow - accPrev : null;
   const seen = new Set(s.attempts.map((a) => a.questionId)).size;
+  const bankSize = Math.max(1, topics.reduce((n, t) => n + t.questionCount, 0));
 
   return (
     <>
@@ -35,7 +35,7 @@ export function AnalyticsView() {
           hint={delta === null ? "No previous week" : `${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta)} pts vs previous 7 days`}
         />
         <StatTile label="Questions answered" value={s.attempts.length} hint={`${last7.length} this week`} />
-        <StatTile label="Bank coverage" value={`${Math.round((seen / Object.keys(questionById).length) * 100)}%`} hint={`${seen} of ${Object.keys(questionById).length} questions seen`} />
+        <StatTile label="Bank coverage" value={`${Math.min(100, Math.round((seen / bankSize) * 100))}%`} hint={`${seen} of ${bankSize} questions seen`} />
         <StatTile label="Study streak" value={streakDays(s.attempts, s.now)} hint="days in a row" />
       </section>
 
@@ -55,7 +55,7 @@ export function AnalyticsView() {
       <Card className="mt-4 p-6">
         <h2 className="font-semibold text-ink">Accuracy by topic</h2>
         <p className="mb-6 text-sm text-ink-muted">Weakest first — this is where practice pays off most.</p>
-        <TopicBars stats={topicStats(s.attempts, topics, questionById)} />
+        <TopicBars stats={topicStats(s.attempts, topics)} />
       </Card>
 
       <div className="mt-10 flex flex-col items-start gap-2 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">

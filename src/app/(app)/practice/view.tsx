@@ -5,20 +5,21 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Languages } from "lucide-react";
 import { useDemoStore } from "@/lib/demo-store";
 import { topicStats } from "@/lib/analytics";
-import { topics } from "@/demo/topics";
-import { questionById, questions } from "@/demo/questions";
-import { Button, Card, PageHeader, cn } from "@/components/ui";
+import type { TopicWithCount } from "@/lib/types";
+import { Button, Card, cn } from "@/components/ui";
 
 const sizes = [5, 10, 20] as const;
 
-export function PracticeView() {
+export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
   const router = useRouter();
   const store = useDemoStore();
   const [picked, setPicked] = useState<string[]>([]);
   const [size, setSize] = useState<(typeof sizes)[number]>(10);
 
-  const stats = Object.fromEntries(topicStats(store.attempts, topics, questionById).map((t) => [t.slug, t]));
-  const available = questions.filter((q) => picked.length === 0 || picked.includes(q.topic)).length;
+  const stats = Object.fromEntries(topicStats(store.attempts, topics).map((t) => [t.slug, t]));
+  const available = topics
+    .filter((t) => picked.length === 0 || picked.includes(t.slug))
+    .reduce((sum, t) => sum + t.questionCount, 0);
 
   function toggle(slug: string) {
     setPicked((p) => (p.includes(slug) ? p.filter((x) => x !== slug) : [...p, slug]));
@@ -32,12 +33,6 @@ export function PracticeView() {
 
   return (
     <>
-      <PageHeader
-        eyebrow="Question bank"
-        title="Practice"
-        description="Pick one or more topics — or leave them all unselected for a mixed set. You'll see the answer and explanation after each question."
-      />
-
       <Card className="p-5 sm:p-7">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-ink">Topics</h2>
@@ -51,16 +46,18 @@ export function PracticeView() {
           {topics.map((t) => {
             const on = picked.includes(t.slug);
             const st = stats[t.slug];
-            const count = questions.filter((q) => q.topic === t.slug).length;
+            const count = t.questionCount;
             return (
               <button
                 key={t.slug}
                 type="button"
                 onClick={() => toggle(t.slug)}
+                disabled={count === 0}
                 aria-pressed={on}
                 className={cn(
                   "flex items-start gap-3 rounded-xl border p-3.5 text-left transition-colors",
                   on ? "border-accent bg-accent-soft/60" : "border-line hover:border-line-strong hover:bg-sunken/50",
+                  "disabled:cursor-not-allowed disabled:opacity-50",
                 )}
               >
                 <span
@@ -77,7 +74,7 @@ export function PracticeView() {
                     {t.nameRu}
                   </span>
                   <span className="mt-1.5 block text-xs text-ink-muted">
-                    {count} questions
+                    {count} {count === 1 ? "question" : "questions"}
                     {store.ready && st?.accuracy !== null && st ? ` · ${st.accuracy}% correct` : ""}
                   </span>
                 </span>
@@ -130,7 +127,7 @@ export function PracticeView() {
             </div>
           </div>
           <div className="flex flex-col items-stretch gap-1.5 sm:items-end">
-            <Button onClick={start} className="h-11 px-6">
+            <Button onClick={start} disabled={available === 0} className="h-11 px-6">
               Start practice <ArrowRight className="size-4" aria-hidden />
             </Button>
             <p className="text-center text-xs text-ink-muted sm:text-right">

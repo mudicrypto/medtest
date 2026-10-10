@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, ShieldCheck } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { signOut } from "@/app/(auth)/actions";
 
@@ -26,7 +26,15 @@ export async function AccountMenu() {
           <p className="truncate text-xs text-ink-muted">{user.email}</p>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-1.5">
+      {(user.role === "admin" || user.role === "reviewer") && (
+        <Link
+          href="/admin"
+          className="mt-3 flex h-8 items-center justify-center gap-1.5 rounded-lg bg-sunken text-xs font-medium text-ink-soft hover:text-ink"
+        >
+          <ShieldCheck className="size-3.5" aria-hidden /> Content admin
+        </Link>
+      )}
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
         <Link
           href="/settings"
           className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg text-xs text-ink-soft hover:bg-sunken hover:text-ink"

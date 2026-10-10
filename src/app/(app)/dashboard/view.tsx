@@ -5,12 +5,11 @@ import { ArrowRight, BookOpen, Flame, Languages, RotateCcw, Sparkles, Target, Ti
 import { useDemoStore } from "@/lib/demo-store";
 import { dailyStats, openMistakes, overallAccuracy, streakDays, topicStats } from "@/lib/analytics";
 import { isDue } from "@/lib/srs";
-import { topics } from "@/demo/topics";
-import { questionById } from "@/demo/questions";
+import type { TopicWithCount } from "@/lib/types";
 import { ButtonLink, Card, PageHeader, ProgressBar, Skeleton, StatTile } from "@/components/ui";
 import { VolumeColumns } from "@/components/charts";
 
-export function DashboardView({ greeting }: { greeting: React.ReactNode }) {
+export function DashboardView({ greeting, topics }: { greeting: React.ReactNode; topics: TopicWithCount[] }) {
   const s = useDemoStore();
   if (!s.ready) return <DashboardSkeleton />;
 
@@ -19,7 +18,8 @@ export function DashboardView({ greeting }: { greeting: React.ReactNode }) {
   const acc = overallAccuracy(s.attempts);
   const streak = streakDays(s.attempts, s.now);
   const days = dailyStats(s.attempts, 14, s.now);
-  const weakest = topicStats(s.attempts, topics, questionById)
+  const bankSize = topics.reduce((n, t) => n + t.questionCount, 0);
+  const weakest = topicStats(s.attempts, topics)
     .filter((t) => t.accuracy !== null)
     .sort((a, b) => a.accuracy! - b.accuracy!)
     .slice(0, 3);
@@ -123,7 +123,7 @@ export function DashboardView({ greeting }: { greeting: React.ReactNode }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <QuickLink href="/mock-exams" icon={<Timer className="size-5" />} title="Mock exam" text="Timed, no feedback until you submit." />
           <QuickLink href="/terminology" icon={<Languages className="size-5" />} title="Terminology" text="Russian ↔ English flashcards." />
-          <QuickLink href="/practice" icon={<BookOpen className="size-5" />} title="Question bank" text={`${Object.keys(questionById).length} demo questions in ${topics.length} topics.`} />
+          <QuickLink href="/practice" icon={<BookOpen className="size-5" />} title="Question bank" text={`${bankSize} questions in ${topics.filter((t) => t.questionCount > 0).length} topics.`} />
           <QuickLink href="/tutor" icon={<Sparkles className="size-5" />} title="AI tutor" text="Ask about a topic or your study plan." />
         </div>
       </section>
@@ -146,7 +146,7 @@ function QuickLink({ href, icon, title, text }: { href: string; icon: React.Reac
   );
 }
 
-function DashboardSkeleton() {
+export function DashboardSkeleton() {
   return (
     <div aria-busy="true" aria-label="Loading dashboard">
       <Skeleton className="mb-8 h-16 w-2/3" />

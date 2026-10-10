@@ -14,6 +14,7 @@ const PROTECTED_PREFIXES = [
   "/tutor",
   "/questions",
   "/settings",
+  "/admin",
   "/reset-password",
 ];
 

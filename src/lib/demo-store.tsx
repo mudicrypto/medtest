@@ -8,7 +8,6 @@ import type { Attempt, QuestionOption } from "@/lib/types";
 import { gradeFromAnswer, newCard, schedule, type Grade, type SrsCard } from "@/lib/srs";
 import { seedHistory } from "@/demo/history";
 import { terms } from "@/demo/terms";
-import { gradeDemoAnswer, type GradeResult } from "@/demo/grade";
 
 export interface MockResult {
   blueprintId: string;
@@ -33,7 +32,8 @@ interface DemoState {
 interface DemoStore extends DemoState {
   ready: boolean;
   now: number;
-  answer: (questionId: string, selected: QuestionOption["id"], mode: Attempt["mode"]) => GradeResult;
+  /** Saves an answer the server has already graded. */
+  recordAttempt: (attempt: Omit<Attempt, "at">) => void;
   toggleBookmark: (questionId: string) => void;
   gradeCard: (cardId: string, grade: Grade) => void;
   saveMock: (result: MockResult) => void;
@@ -41,7 +41,8 @@ interface DemoStore extends DemoState {
   reset: () => void;
 }
 
-const STORAGE_KEY = "medprep-demo-v1";
+// v2: attempts now carry their topic.
+const STORAGE_KEY = "medprep-demo-v2";
 
 function buildInitial(now: number): DemoState {
   const attempts = seedHistory(now);
@@ -97,22 +98,20 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     if (state) save(state);
   }, [state]);
 
-  const answer = useCallback<DemoStore["answer"]>((questionId, selected, mode) => {
-    const result = gradeDemoAnswer(questionId, selected);
+  const recordAttempt = useCallback<DemoStore["recordAttempt"]>((attempt) => {
     const at = Date.now();
     setState((s) => {
       if (!s) return s;
-      const id = `q:${questionId}`;
+      const id = `q:${attempt.questionId}`;
       return {
         ...s,
-        attempts: [...s.attempts, { questionId, selected, correct: result.correct, at, mode }],
+        attempts: [...s.attempts, { ...attempt, at }],
         cards: {
           ...s.cards,
-          [id]: schedule(s.cards[id] ?? newCard(at), gradeFromAnswer(result.correct), at),
+          [id]: schedule(s.cards[id] ?? newCard(at), gradeFromAnswer(attempt.correct), at),
         },
       };
     });
-    return result;
   }, []);
 
   const toggleBookmark = useCallback((questionId: string) => {
@@ -152,14 +151,14 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       ...(state ?? { attempts: [], bookmarks: [], cards: {}, mocks: [], showRussian: true }),
       ready: state !== null,
       now,
-      answer,
+      recordAttempt,
       toggleBookmark,
       gradeCard,
       saveMock,
       setShowRussian,
       reset,
     }),
-    [state, now, answer, toggleBookmark, gradeCard, saveMock, setShowRussian, reset],
+    [state, now, recordAttempt, toggleBookmark, gradeCard, saveMock, setShowRussian, reset],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

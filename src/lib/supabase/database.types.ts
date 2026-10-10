@@ -23,7 +23,53 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "profiles": {
+            "attempts": {
+                  Row: {
+                    "answered_at": string,"id": number,"is_correct": boolean,"mode": Database["public"]['Enums']["attempt_mode"],"question_id": string,"selected": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answered_at"?: string,"id"?: never,"is_correct": boolean,"mode": Database["public"]['Enums']["attempt_mode"],"question_id": string,"selected"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "answered_at"?: string,"id"?: never,"is_correct"?: boolean,"mode"?: Database["public"]['Enums']["attempt_mode"],"question_id"?: string,"selected"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "attempts_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: false
+      referencedRelation: "questions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "attempts_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"content_sources": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"granted_by": string | null,"granted_on": string | null,"id": string,"license_notes": string | null,"permission_evidence": string | null,"publisher": string | null,"rights_status": Database["public"]['Enums']["rights_status"],"title": string,"url": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"granted_by"?: string | null,"granted_on"?: string | null,"id"?: string,"license_notes"?: string | null,"permission_evidence"?: string | null,"publisher"?: string | null,"rights_status": Database["public"]['Enums']["rights_status"],"title": string,"url"?: string | null
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"granted_by"?: string | null,"granted_on"?: string | null,"id"?: string,"license_notes"?: string | null,"permission_evidence"?: string | null,"publisher"?: string | null,"rights_status"?: Database["public"]['Enums']["rights_status"],"title"?: string,"url"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "content_sources_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"profiles": {
                   Row: {
                     "created_at": string,"display_name": string,"id": string,"role": Database["public"]['Enums']["user_role"],"show_russian": boolean,"target_exam_date": string | null,"updated_at": string
                   }
@@ -37,16 +83,128 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"question_keys": {
+                  Row: {
+                    "correct": string,"explanation_en": string,"explanation_ru": string | null,"question_id": string,"references": string | null,"tutor_hint": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "correct": string,"explanation_en": string,"explanation_ru"?: string | null,"question_id": string,"references"?: string | null,"tutor_hint"?: string | null
+                  }
+                  Update: {
+                    "correct"?: string,"explanation_en"?: string,"explanation_ru"?: string | null,"question_id"?: string,"references"?: string | null,"tutor_hint"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "question_keys_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: true
+      referencedRelation: "questions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"question_options": {
+                  Row: {
+                    "position": string,"question_id": string,"text_en": string,"text_ru": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "position": string,"question_id": string,"text_en": string,"text_ru"?: string | null
+                  }
+                  Update: {
+                    "position"?: string,"question_id"?: string,"text_en"?: string,"text_ru"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "question_options_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: false
+      referencedRelation: "questions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"questions": {
+                  Row: {
+                    "created_at": string,"difficulty": number,"id": string,"key_terms": NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"review_note": string | null,"review_status": Database["public"]['Enums']["review_status"],"reviewed_at": string | null,"reviewed_by": string | null,"rights_status": Database["public"]['Enums']["rights_status"],"slug": string,"source_id": string | null,"source_ref": string | null,"stem_en": string,"stem_ru": string | null,"topic": string,"updated_at": string,"version": number,"is_published": boolean | null
+                  }
+                  ComputedFields: "is_published"
+                  Insert: {
+                    "created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status": Database["public"]['Enums']["rights_status"],"slug": string,"source_id"?: string | null,"source_ref"?: string | null,"stem_en": string,"stem_ru"?: string | null,"topic": string,"updated_at"?: string,"version"?: number
+                  }
+                  Update: {
+                    "created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin"?: Database["public"]['Enums']["content_origin"],"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status"?: Database["public"]['Enums']["rights_status"],"slug"?: string,"source_id"?: string | null,"source_ref"?: string | null,"stem_en"?: string,"stem_ru"?: string | null,"topic"?: string,"updated_at"?: string,"version"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "questions_reviewed_by_fkey"
+      columns: ["reviewed_by"]
+isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "questions_source_id_fkey"
+      columns: ["source_id"]
+isOneToOne: false
+      referencedRelation: "content_sources"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "questions_topic_fkey"
+      columns: ["topic"]
+isOneToOne: false
+      referencedRelation: "topics"
+      referencedColumns: ["slug"]
+    }
+                  ]
+                },"topics": {
+                  Row: {
+                    "name_en": string,"name_ru": string,"slug": string,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "name_en": string,"name_ru": string,"slug": string,"sort_order"?: number
+                  }
+                  Update: {
+                    "name_en"?: string,"name_ru"?: string,"slug"?: string,"sort_order"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 }
           }
           Views: {
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "grade_mock":
+{ Args: { "p_answers": Json,"p_slugs": (string)[] }; Returns: {
+              "correct": string,"explanation_en": string,"is_correct": boolean,"selected": string,"slug": string,"topic": string
+            }[]
+                           },
+"import_questions":
+{ Args: { "p_rows": Json,"p_source"?: string }; Returns: {
+              "action": string,"slug": string
+            }[]
+                           },
+"is_admin":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"is_published":
+{ Args: { "q": Omit<Database["public"]['Tables']["questions"]['Row'], Database["public"]['Tables']["questions"]['ComputedFields']> }; Returns: boolean
+                           },
+"is_staff":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
+"set_review_status":
+{ Args: { "p_note"?: string,"p_slug": string,"p_status": Database["public"]['Enums']["review_status"] }; Returns: undefined
+                           },
+"submit_answer":
+{ Args: { "p_mode"?: Database["public"]['Enums']["attempt_mode"],"p_selected": string,"p_slug": string }; Returns: {
+              "correct": string,"explanation_en": string,"explanation_ru": string,"is_correct": boolean,"topic": string,"tutor_hint": string
+            }[]
+                           }
           }
           Enums: {
-            "user_role": "student"|"reviewer"|"admin"
+            "attempt_mode": "practice"|"review"|"mock","content_origin": "original_practice"|"official_verified"|"adapted"|"demo","review_status": "draft"|"in_review"|"approved"|"retired","rights_status": "owned"|"licensed"|"public_domain"|"permission_pending"|"not_cleared","user_role": "student"|"reviewer"|"admin"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -166,7 +324,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "user_role": ["student", "reviewer", "admin"]
+            "attempt_mode": ["practice", "review", "mock"],"content_origin": ["original_practice", "official_verified", "adapted", "demo"],"review_status": ["draft", "in_review", "approved", "retired"],"rights_status": ["owned", "licensed", "public_domain", "permission_pending", "not_cleared"],"user_role": ["student", "reviewer", "admin"]
           }
         }
 } as const

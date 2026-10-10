@@ -63,6 +63,10 @@ pnpm exec supabase db push                           # applies every migration t
 `link` asks for the database password from step 1. Type it into your terminal
 only.
 
+`db push` creates the tables but **no questions**. The demo questions are only
+loaded automatically into the local test database. To try them on your
+project, import `content/demo-questions.csv` from the admin area (step 7).
+
 ## 6. Configure the app
 
 Copy `.env.example` to a new file called `.env.local`, then fill in:
@@ -75,6 +79,11 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 `.env.local` is never committed to GitHub. Then run `pnpm dev` and open
 <http://localhost:3000>, and create an account to check everything works.
+
+## 7. Make yourself an admin and add questions
+
+Follow [CONTENT_GUIDE.md](CONTENT_GUIDE.md): sign up, run the one-line SQL that
+makes you an admin, register your source, and import your spreadsheet.
 
 ## Troubleshooting
 

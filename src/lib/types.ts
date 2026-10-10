@@ -35,8 +35,10 @@ export interface QuestionOption {
 }
 
 export interface Question {
+  /** Public identifier (the database slug), e.g. "q-card-01". */
   id: string;
   topic: string; // Topic slug
+  topicName: string;
   stemEn: string;
   /** Russian text is only shown when rights are cleared for it. */
   stemRu?: string;
@@ -50,16 +52,27 @@ export interface Question {
 }
 
 /**
- * Answer keys are a separate type on purpose: in the real app they live in a
- * server-only table (`question_keys`) and never reach the browser before the
- * student answers.
+ * Answer keys are a separate type on purpose: they live in a server-only table
+ * (`question_keys`) and reach the browser only in the response to a submitted
+ * answer.
  */
 export interface QuestionKey {
-  questionId: string;
   correct: QuestionOption["id"];
   explanationEn: string;
-  /** Short, scripted reply used by the demo tutor. */
+  explanationRu: string | null;
+  /** Short reply used by the demo tutor. */
   tutorHint: string;
+}
+
+/** What the server returns after grading one answer. */
+export interface GradeResult {
+  correct: boolean;
+  key: QuestionKey;
+  topic: string;
+}
+
+export interface TopicWithCount extends Topic {
+  questionCount: number;
 }
 
 export interface Term {
@@ -85,6 +98,8 @@ export interface ExamBlueprint {
 
 export interface Attempt {
   questionId: string;
+  /** Topic slug, stored with the attempt so analytics needn't look questions up. */
+  topic: string;
   selected: QuestionOption["id"];
   correct: boolean;
   at: number; // epoch ms

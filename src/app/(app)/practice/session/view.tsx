@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowRight, CircleCheck, CircleX, X } from "lucide-react";
 import { useDemoStore } from "@/lib/demo-store";
-import type { Attempt } from "@/lib/types";
-import { questionById, questions } from "@/demo/questions";
+import type { Question } from "@/lib/types";
+import { useQuestions } from "@/lib/use-questions";
+import { fetchQuestionRefs } from "@/app/(app)/question-actions";
 import { QuestionCard } from "@/components/question-card";
 import { Button, ButtonLink, Card, ProgressBar, Skeleton } from "@/components/ui";
 
@@ -26,32 +27,57 @@ function Session({ params }: { params: URLSearchParams }) {
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<Record<string, boolean>>({});
 
-  // Freeze the question list once, when the store is ready, so answering
-  // doesn't reshuffle the session.
+  const [failed, setFailed] = useState(false);
+
+  // Choose the session's questions once, when local progress has loaded, so
+  // answering doesn't reshuffle the session.
   useEffect(() => {
     if (!store.ready || ids) return;
-    const explicit = params.get("ids")?.split(",").filter((id) => questionById[id]);
+    let cancelled = false;
+    const explicit = params.get("ids")?.split(",").filter(Boolean) ?? [];
     const topicFilter = params.get("topics")?.split(",").filter(Boolean) ?? [];
-    const n = Math.max(1, Number(params.get("n")) || 10);
-    let list: string[];
-    if (explicit?.length) list = explicit;
-    else {
-      const lastSeen = new Map<string, number>();
-      for (const a of store.attempts) lastSeen.set(a.questionId, a.at);
-      list = questions
-        .filter((q) => !topicFilter.length || topicFilter.includes(q.topic))
-        // Unseen first, then the ones seen longest ago.
-        .sort((a, b) => (lastSeen.get(a.id) ?? 0) - (lastSeen.get(b.id) ?? 0))
-        .slice(0, n)
-        .map((q) => q.id);
+    const n = Math.max(1, Math.min(100, Number(params.get("n")) || 10));
+    if (explicit.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- freeze session list once data is loaded
+      setIds(explicit.slice(0, 300));
+      return;
     }
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- freeze session list once data is loaded
-    setIds(list);
+    const lastSeen = new Map<string, number>();
+    for (const a of store.attempts) lastSeen.set(a.questionId, a.at);
+    fetchQuestionRefs(topicFilter).then(
+      (refs) => {
+        if (cancelled) return;
+        setIds(
+          refs
+            // Unseen first, then the ones seen longest ago.
+            .sort((a, b) => (lastSeen.get(a.id) ?? 0) - (lastSeen.get(b.id) ?? 0))
+            .slice(0, n)
+            .map((r) => r.id),
+        );
+      },
+      () => !cancelled && setFailed(true),
+    );
+    return () => {
+      cancelled = true;
+    };
   }, [store.ready, store.attempts, ids, params]);
 
-  if (!ids) return <Skeleton className="h-[520px]" />;
+  const loaded = useQuestions(ids);
 
-  if (ids.length === 0) {
+  if (failed || loaded.status === "error") {
+    return (
+      <Card className="p-8 text-center">
+        <p className="text-ink">We couldn&apos;t load your questions. Check your connection and try again.</p>
+        <ButtonLink href="/practice" variant="secondary" className="mt-4">
+          Back to practice
+        </ButtonLink>
+      </Card>
+    );
+  }
+  if (!ids || loaded.status === "loading") return <Skeleton className="h-[520px]" />;
+
+  const list = loaded.questions;
+  if (list.length === 0) {
     return (
       <Card className="p-8 text-center">
         <p className="text-ink">No questions match this selection.</p>
@@ -62,13 +88,13 @@ function Session({ params }: { params: URLSearchParams }) {
     );
   }
 
-  const done = index >= ids.length;
-  const mode: Attempt["mode"] = params.get("mode") === "review" ? "review" : "practice";
+  const done = index >= list.length;
+  const mode = params.get("mode") === "review" ? "review" : "practice";
 
-  if (done) return <Summary ids={ids} results={results} />;
+  if (done) return <Summary questions={list} results={results} />;
 
-  const q = questionById[ids[index]];
-  const isLast = index === ids.length - 1;
+  const q = list[index];
+  const isLast = index === list.length - 1;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -81,10 +107,10 @@ function Session({ params }: { params: URLSearchParams }) {
           <span className="sr-only">End session</span>
         </Link>
         <div className="flex-1">
-          <ProgressBar value={(index / ids.length) * 100} label="Session progress" />
+          <ProgressBar value={(index / list.length) * 100} label="Session progress" />
         </div>
         <span className="shrink-0 text-sm tabular-nums text-ink-muted">
-          {index + 1} / {ids.length}
+          {index + 1} / {list.length}
         </span>
       </div>
 
@@ -103,7 +129,8 @@ function Session({ params }: { params: URLSearchParams }) {
   );
 }
 
-function Summary({ ids, results }: { ids: string[]; results: Record<string, boolean> }) {
+function Summary({ questions, results }: { questions: Question[]; results: Record<string, boolean> }) {
+  const ids = questions.map((q) => q.id);
   const correct = ids.filter((id) => results[id]).length;
   const pct = Math.round((correct / ids.length) * 100);
   const wrongIds = ids.filter((id) => results[id] === false);
@@ -132,11 +159,10 @@ function Summary({ ids, results }: { ids: string[]; results: Record<string, bool
       </Card>
 
       <Card className="mt-4 divide-y divide-line">
-        {ids.map((id, i) => {
-          const q = questionById[id];
-          const ok = results[id];
+        {questions.map((q, i) => {
+          const ok = results[q.id];
           return (
-            <Link key={id} href={`/questions/${id}`} className="flex items-start gap-3 px-5 py-4 hover:bg-sunken/50">
+            <Link key={q.id} href={`/questions/${q.id}`} className="flex items-start gap-3 px-5 py-4 hover:bg-sunken/50">
               {ok ? (
                 <CircleCheck className="mt-0.5 size-5 shrink-0 text-success" aria-label="Correct" />
               ) : (

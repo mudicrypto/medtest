@@ -2,11 +2,12 @@ import { describe, expect, it } from "vitest";
 import { newCard, schedule, isDue } from "../../src/lib/srs";
 import { dailyStats, openMistakes, overallAccuracy, streakDays, topicStats } from "../../src/lib/analytics";
 import type { Attempt } from "../../src/lib/types";
-import { questions, questionById } from "../../src/demo/questions";
-import { keyByQuestionId } from "../../src/demo/keys";
+import { readFileSync } from "node:fs";
 import { topics } from "../../src/demo/topics";
 import { terms } from "../../src/demo/terms";
 import { seedHistory } from "../../src/demo/history";
+import { demoQuestionRefs } from "../../src/demo/question-refs";
+import { parseQuestionsCsv, toCsv, CSV_COLUMNS, type CsvRecord } from "../../src/lib/content/csv";
 
 const DAY = 86_400_000;
 const NOW = new Date("2026-10-10T12:00:00").getTime();
@@ -42,8 +43,10 @@ describe("spaced repetition", () => {
 });
 
 describe("analytics", () => {
+  const topicOf = (id: string) => demoQuestionRefs.find((q) => q.id === id)!.topic;
   const a = (questionId: string, correct: boolean, at: number): Attempt => ({
     questionId,
+    topic: topicOf(questionId),
     correct,
     at,
     selected: "A",
@@ -54,7 +57,7 @@ describe("analytics", () => {
     const attempts = [a("q-card-01", true, NOW), a("q-card-02", false, NOW), a("q-pulm-01", true, NOW)];
     expect(overallAccuracy(attempts)).toBe(67);
     expect(overallAccuracy([])).toBeNull();
-    const stats = topicStats(attempts, topics, questionById);
+    const stats = topicStats(attempts, topics);
     expect(stats.find((s) => s.slug === "cardiology")).toMatchObject({ answered: 2, correct: 1, accuracy: 50 });
     expect(stats.find((s) => s.slug === "surgery")?.accuracy).toBeNull();
   });
@@ -78,46 +81,117 @@ describe("analytics", () => {
   });
 });
 
-describe("demo content integrity", () => {
-  it("every question is labelled demo and has exactly four options A–D", () => {
-    for (const q of questions) {
-      expect(q.origin, q.id).toBe("demo");
-      expect(q.options.map((o) => o.id), q.id).toEqual(["A", "B", "C", "D"]);
-      expect(topics.some((t) => t.slug === q.topic), q.id).toBe(true);
+const TOPIC_SLUGS = topics.map((t) => t.slug);
+const demoCsv = readFileSync("content/demo-questions.csv", "utf8");
+
+describe("demo question bank (content/demo-questions.csv)", () => {
+  const { rows, errors, fileErrors } = parseQuestionsCsv(demoCsv, TOPIC_SLUGS);
+
+  it("parses with no errors", () => {
+    expect(fileErrors).toEqual([]);
+    expect(errors).toEqual([]);
+    expect(rows).toHaveLength(18);
+  });
+
+  it("every question is labelled demo, not reviewed, with four options and a valid key", () => {
+    for (const r of rows) {
+      expect(r.origin, r.slug).toBe("demo");
+      expect(r.review_status, r.slug).toBe("draft");
+      expect(r.options.map((o) => o.position)).toEqual(["A", "B", "C", "D"]);
+      expect(["A", "B", "C", "D"]).toContain(r.key.correct);
+      expect(r.key.explanation_en.length, r.slug).toBeGreaterThan(40);
     }
   });
 
-  it("every question has exactly one answer key pointing at a real option", () => {
-    expect(Object.keys(keyByQuestionId).sort()).toEqual(questions.map((q) => q.id).sort());
-    for (const q of questions) {
-      const key = keyByQuestionId[q.id];
-      expect(q.options.some((o) => o.id === key.correct), q.id).toBe(true);
-      expect(key.explanationEn.length, q.id).toBeGreaterThan(40);
-    }
+  it("matches the ids used for the seeded demo history", () => {
+    expect(rows.map((r) => ({ id: r.slug, topic: r.topic }))).toEqual(demoQuestionRefs);
   });
 
-  it("question ids and term ids are unique", () => {
-    expect(new Set(questions.map((q) => q.id)).size).toBe(questions.length);
-    expect(new Set(terms.map((t) => t.id)).size).toBe(terms.length);
-  });
-
-  it("Russian text, where present, contains no Latin letters mixed into Cyrillic words", () => {
+  it("Russian text contains no Latin letters mixed into Cyrillic words", () => {
     const mixed = /[а-яё][a-z]|[a-z][а-яё]/i;
-    for (const q of questions) {
-      for (const text of [q.stemRu ?? "", ...q.options.map((o) => o.textRu ?? "")]) {
-        expect(mixed.test(text), `${q.id}: ${text}`).toBe(false);
+    for (const r of rows) {
+      for (const text of [r.stem_ru ?? "", ...r.options.map((o) => o.text_ru ?? "")]) {
+        expect(mixed.test(text), `${r.slug}: ${text}`).toBe(false);
       }
     }
   });
+});
 
-  it("seeded history is deterministic and only references real questions", () => {
+describe("CSV import validation", () => {
+  const good: Partial<CsvRecord> = {
+    slug: "test-01",
+    topic: "cardiology",
+    stem_en: "Which drug is first-line for this stable patient?",
+    option_a_en: "One",
+    option_b_en: "Two",
+    option_c_en: "Three",
+    option_d_en: "Four",
+    correct: "b",
+    explanation_en: "Because two.",
+    key_terms: "тахикардия = tachycardia; одышка = dyspnoea",
+    origin: "original_practice",
+    rights_status: "owned",
+  };
+
+  it("accepts a valid row and fills sensible defaults", () => {
+    const { rows, errors } = parseQuestionsCsv(toCsv([good]), TOPIC_SLUGS);
+    expect(errors).toEqual([]);
+    expect(rows[0]).toMatchObject({
+      slug: "test-01",
+      difficulty: 2,
+      review_status: "in_review",
+      stem_ru: null,
+      key: { correct: "B" },
+      key_terms: [
+        { ru: "тахикардия", en: "tachycardia" },
+        { ru: "одышка", en: "dyspnoea" },
+      ],
+    });
+  });
+
+  it("reports every problem in a bad row, with its spreadsheet line number", () => {
+    const bad = { ...good, slug: "Bad Slug!", topic: "astrology", correct: "E", origin: "official", key_terms: "no equals sign" };
+    const { rows, errors } = parseQuestionsCsv(toCsv([good, bad]), TOPIC_SLUGS);
+    expect(rows).toHaveLength(1);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].line).toBe(3);
+    const text = errors[0].messages.join(" | ");
+    expect(text).toMatch(/slug must be/);
+    expect(text).toMatch(/topic must be one of/);
+    expect(text).toMatch(/correct must be A, B, C or D/);
+    expect(text).toMatch(/origin must be one of/);
+    expect(text).toMatch(/key_terms/);
+  });
+
+  it("flags duplicate slugs within one file", () => {
+    const { errors } = parseQuestionsCsv(toCsv([good, good]), TOPIC_SLUGS);
+    expect(errors[0].messages.join()).toMatch(/also used on line 2/);
+  });
+
+  it("rejects files with missing columns", () => {
+    const { fileErrors } = parseQuestionsCsv("slug,topic\na,b\n", TOPIC_SLUGS);
+    expect(fileErrors[0]).toMatch(/Missing columns/);
+  });
+
+  it("handles a UTF-8 byte-order mark (Excel's 'CSV UTF-8' export)", () => {
+    const { rows } = parseQuestionsCsv("\uFEFF" + toCsv([good]), TOPIC_SLUGS);
+    expect(rows).toHaveLength(1);
+  });
+
+  it("the template columns are stable", () => {
+    expect(CSV_COLUMNS).toHaveLength(23);
+  });
+});
+
+describe("demo terms and history", () => {
+  it("term ids are unique", () => {
+    expect(new Set(terms.map((t) => t.id)).size).toBe(terms.length);
+  });
+
+  it("seeded history is deterministic and only references demo questions", () => {
     const h1 = seedHistory(NOW);
-    const h2 = seedHistory(NOW);
-    expect(h1).toEqual(h2);
+    expect(h1).toEqual(seedHistory(NOW));
     expect(h1.length).toBeGreaterThan(30);
-    for (const at of h1) {
-      expect(questionById[at.questionId]).toBeDefined();
-      expect(at.correct).toBe(at.selected === keyByQuestionId[at.questionId].correct);
-    }
+    for (const at of h1) expect(demoQuestionRefs.some((q) => q.id === at.questionId && q.topic === at.topic)).toBe(true);
   });
 });

@@ -1,28 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, CircleCheck, CircleX, Clock, Flag, Info } from "lucide-react";
 import { useDemoStore, type MockResult } from "@/lib/demo-store";
-import type { QuestionOption } from "@/lib/types";
+import type { Question, QuestionOption } from "@/lib/types";
 import { blueprints } from "@/demo/blueprints";
-import { questionById, questions } from "@/demo/questions";
-import { keyByQuestionId } from "@/demo/keys";
-import { topicBySlug } from "@/demo/topics";
+import { startMock, submitMock, type MockGrade } from "@/app/(app)/question-actions";
 import { SourceBadge } from "@/components/source-badge";
 import { Badge, Button, ButtonLink, Card, ProgressBar, Skeleton, cn } from "@/components/ui";
 
 type OptionId = QuestionOption["id"];
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 function fmt(sec: number) {
   const m = Math.floor(sec / 60);
@@ -35,52 +24,71 @@ export function MockRunView() {
   const blueprint = blueprints.find((b) => b.id === params.get("b")) ?? blueprints[0];
   const store = useDemoStore();
 
-  const [ids, setIds] = useState<string[] | null>(null);
+  const [questions, setQuestions] = useState<Question[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, startSubmitting] = useTransition();
   const [startedAt, setStartedAt] = useState(0);
   const [now, setNow] = useState(0);
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, OptionId>>({});
   const [flags, setFlags] = useState<string[]>([]);
   const [confirming, setConfirming] = useState(false);
-  const [result, setResult] = useState<MockResult | null>(null);
+  const [result, setResult] = useState<{ summary: MockResult; grades: MockGrade[] } | null>(null);
+  const ids = useMemo(() => questions?.map((q) => q.id) ?? null, [questions]);
 
-  // Pick questions once on mount (client-only, so the random order is stable).
+  // The server picks the exam's questions once, on mount.
   useEffect(() => {
-    const t = Date.now();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- pick exam questions once on mount
-    setIds(shuffle(questions.map((q) => q.id)).slice(0, blueprint.questionCount));
-    setStartedAt(t);
-    setNow(t);
+    let cancelled = false;
+    startMock(blueprint.questionCount).then(
+      (qs) => {
+        if (cancelled) return;
+        const t = Date.now();
+        setQuestions(qs);
+        setStartedAt(t);
+        setNow(t);
+      },
+      () => !cancelled && setLoadError(true),
+    );
+    return () => {
+      cancelled = true;
+    };
   }, [blueprint.questionCount]);
 
   const remaining = Math.max(0, blueprint.timeLimitMinutes * 60 - Math.floor((now - startedAt) / 1000));
 
+  const { recordAttempt, saveMock } = store;
   const submit = useCallback(() => {
-    if (!ids || result) return;
-    // In the real app this is one server call (`submit_mock_exam`) that grades
-    // everything and enforces the deadline with the server clock.
-    let score = 0;
-    for (const id of ids) {
-      const a = answers[id];
-      if (a) {
-        const r = store.answer(id, a, "mock");
-        if (r.correct) score++;
+    if (!ids || result || submitting) return;
+    setSubmitError(null);
+    // One server call grades the whole exam. (Server-side time limits arrive
+    // with the full mock exam milestone.)
+    startSubmitting(async () => {
+      try {
+        const grades = await submitMock(ids, answers);
+        for (const g of grades) {
+          if (g.selected) recordAttempt({ questionId: g.questionId, topic: g.topic, selected: g.selected, correct: g.isCorrect, mode: "mock" });
+        }
+        const score = grades.filter((g) => g.isCorrect).length;
+        const summary: MockResult = {
+          blueprintId: blueprint.id,
+          questionIds: ids,
+          answers,
+          score,
+          total: ids.length,
+          passed: (score / ids.length) * 100 >= blueprint.passThresholdPct,
+          submittedAt: Date.now(),
+          durationSec: Math.round((Date.now() - startedAt) / 1000),
+        };
+        saveMock(summary);
+        setConfirming(false);
+        setResult({ summary, grades });
+        window.scrollTo({ top: 0 });
+      } catch {
+        setSubmitError("We couldn't submit your exam. Check your connection and try again — your answers are kept.");
       }
-    }
-    const res: MockResult = {
-      blueprintId: blueprint.id,
-      questionIds: ids,
-      answers,
-      score,
-      total: ids.length,
-      passed: (score / ids.length) * 100 >= blueprint.passThresholdPct,
-      submittedAt: Date.now(),
-      durationSec: Math.round((Date.now() - startedAt) / 1000),
-    };
-    store.saveMock(res);
-    setResult(res);
-    window.scrollTo({ top: 0 });
-  }, [ids, result, answers, store, blueprint, startedAt]);
+    });
+  }, [ids, result, submitting, answers, recordAttempt, saveMock, blueprint, startedAt]);
 
   // Countdown; auto-submit when time runs out.
   useEffect(() => {
@@ -89,15 +97,39 @@ export function MockRunView() {
     return () => clearInterval(t);
   }, [ids, result]);
 
+  // Auto-submit once when time runs out (a failed attempt can be retried by hand).
+  const autoSubmitted = useRef(false);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- time-up auto-submit
-    if (ids && !result && startedAt && remaining === 0) submit();
+    if (ids && !result && startedAt && remaining === 0 && !autoSubmitted.current) {
+      autoSubmitted.current = true;
+      submit();
+    }
   }, [ids, result, startedAt, remaining, submit]);
 
-  if (!ids || !store.ready) return <Skeleton className="h-[520px]" />;
-  if (result) return <Results result={result} />;
+  if (loadError) {
+    return (
+      <Card className="p-8 text-center">
+        <p className="text-ink">We couldn&apos;t start the exam. Check your connection and try again.</p>
+        <ButtonLink href="/mock-exams" variant="secondary" className="mt-4">
+          Back to mock exams
+        </ButtonLink>
+      </Card>
+    );
+  }
+  if (!questions || !ids || !store.ready) return <Skeleton className="h-[520px]" />;
+  if (questions.length === 0) {
+    return (
+      <Card className="p-8 text-center">
+        <p className="text-ink">There are no questions available for a mock exam yet.</p>
+        <ButtonLink href="/mock-exams" variant="secondary" className="mt-4">
+          Back to mock exams
+        </ButtonLink>
+      </Card>
+    );
+  }
+  if (result) return <Results result={result.summary} grades={result.grades} questions={questions} />;
 
-  const q = questionById[ids[index]];
+  const q = questions[index];
   const answeredCount = Object.keys(answers).length;
   const lowTime = remaining <= 60;
 
@@ -258,11 +290,18 @@ export function MockRunView() {
                 : "All questions answered."}
               {flags.length > 0 && ` ${flags.length} flagged.`}
             </p>
+            {submitError && (
+              <p role="alert" className="mt-3 text-sm text-danger">
+                {submitError}
+              </p>
+            )}
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setConfirming(false)}>
                 Keep going
               </Button>
-              <Button onClick={submit}>Submit</Button>
+              <Button onClick={submit} disabled={submitting}>
+                {submitting ? "Submitting…" : "Submit"}
+              </Button>
             </div>
           </Card>
         </div>
@@ -271,21 +310,23 @@ export function MockRunView() {
   );
 }
 
-function Results({ result }: { result: MockResult }) {
+function Results({ result, grades, questions }: { result: MockResult; grades: MockGrade[]; questions: Question[] }) {
   const pct = Math.round((result.score / result.total) * 100);
   const blueprint = blueprints.find((b) => b.id === result.blueprintId)!;
 
+  const questionById = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
+  const topicName = (slug: string) => questions.find((q) => q.topic === slug)?.topicName ?? slug;
+
   const byTopic = useMemo(() => {
     const m = new Map<string, { correct: number; total: number }>();
-    for (const id of result.questionIds) {
-      const t = questionById[id].topic;
-      const cur = m.get(t) ?? { correct: 0, total: 0 };
+    for (const g of grades) {
+      const cur = m.get(g.topic) ?? { correct: 0, total: 0 };
       cur.total++;
-      if (result.answers[id] === keyByQuestionId[id].correct) cur.correct++;
-      m.set(t, cur);
+      if (g.isCorrect) cur.correct++;
+      m.set(g.topic, cur);
     }
     return [...m.entries()].sort((a, b) => a[1].correct / a[1].total - b[1].correct / b[1].total);
-  }, [result]);
+  }, [grades]);
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -314,12 +355,12 @@ function Results({ result }: { result: MockResult }) {
         <ul className="mt-4 space-y-3">
           {byTopic.map(([slug, v]) => (
             <li key={slug} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1.5 text-sm">
-              <span className="text-ink-soft">{topicBySlug[slug]?.nameEn}</span>
+              <span className="text-ink-soft">{topicName(slug)}</span>
               <span className="tabular-nums text-ink">
                 {v.correct}/{v.total}
               </span>
               <div className="col-span-2">
-                <ProgressBar value={(v.correct / v.total) * 100} label={`${topicBySlug[slug]?.nameEn} score`} />
+                <ProgressBar value={(v.correct / v.total) * 100} label={`${topicName(slug)} score`} />
               </div>
             </li>
           ))}
@@ -330,11 +371,12 @@ function Results({ result }: { result: MockResult }) {
         <Info className="size-4 text-ink-muted" aria-hidden /> Answer review
       </h2>
       <Card className="divide-y divide-line">
-        {result.questionIds.map((id, i) => {
-          const q = questionById[id];
-          const key = keyByQuestionId[id];
-          const mine = result.answers[id];
-          const ok = mine === key.correct;
+        {grades.map((g, i) => {
+          const id = g.questionId;
+          const q = questionById.get(id)!;
+          const key = { correct: g.correct, explanationEn: g.explanationEn };
+          const mine = g.selected;
+          const ok = g.isCorrect;
           return (
             <details key={id} className="group px-5 py-4">
               <summary className="flex cursor-pointer list-none items-start gap-3">

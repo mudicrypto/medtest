@@ -2,7 +2,7 @@
 
 > **Learn the medicine. Master the Russian exam.**
 >
-> Status: **approved 2026-10-10.** Milestone 1 (prototype) done; Milestone 2 (accounts) done, awaiting review.
+> Status: **approved 2026-10-10.** Milestone 1 (prototype) done; Milestone 2 (accounts) done; Milestone 3 (question bank, server grading, admin import) done, awaiting review.
 
 ---
 
@@ -83,7 +83,7 @@ These rules come from your brief, and they're enforced by the data model, not ju
 - **Admin and reviewer roles** are stored in a `profiles.role` column and checked by RLS and the server, never by the UI alone.
 - **The AI tutor has rate limits** per user per day, to control cost and abuse.
 
-> **Prototype exception:** the Milestone 1 clickable prototype has no server, so its *demo* answers are in the browser. That's acceptable only because it's clearly labelled demo content. Milestone 3 replaces it with the server-side model above.
+> **Done in Milestone 3:** the prototype's in-browser demo answers were replaced by this server-side model; `tests/e2e/bundle.spec.ts` checks that no answer-key text ships to browsers.
 
 ---
 

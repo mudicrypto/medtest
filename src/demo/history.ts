@@ -1,8 +1,7 @@
 // Seeded DEMO progress so the dashboard and analytics aren't empty on first
 // visit. Generated deterministically so every visitor sees the same picture.
 import type { Attempt } from "@/lib/types";
-import { questions } from "./questions";
-import { keyByQuestionId } from "./keys";
+import { demoQuestionRefs as questions } from "./question-refs";
 
 // Per-topic chance of a correct answer, to make the charts tell a story.
 const skill: Record<string, number> = {
@@ -40,11 +39,11 @@ export function seedHistory(now: number): Attempt[] {
       // Accuracy improves slightly over time.
       const p = Math.min(0.95, skill[q.topic] + (13 - day) * 0.012);
       const correct = rand() < p;
-      const key = keyByQuestionId[q.id];
-      const wrong = q.options.find((o) => o.id !== key.correct)!;
       out.push({
         questionId: q.id,
-        selected: correct ? key.correct : wrong.id,
+        topic: q.topic,
+        // Seeded history doesn't track which option was picked.
+        selected: "A",
         correct,
         at: now - day * 86_400_000 + i * 90_000,
         mode: "practice",

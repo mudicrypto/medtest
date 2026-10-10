@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { Bookmark, BookmarkCheck, CircleCheck, CircleX, Languages, Sparkles } from "lucide-react";
-import type { Attempt, Question, QuestionKey, QuestionOption } from "@/lib/types";
+import type { Question, QuestionKey, QuestionOption } from "@/lib/types";
 import { useDemoStore } from "@/lib/demo-store";
-import { topicBySlug } from "@/demo/topics";
+import { submitAnswer } from "@/app/(app)/question-actions";
 import { SourceBadge } from "./source-badge";
 import { Badge, Button, Card, cn } from "./ui";
 import { TutorDrawer } from "./tutor";
@@ -18,7 +18,7 @@ export function QuestionCard({
   footer,
 }: {
   question: Question;
-  mode: Attempt["mode"];
+  mode: "practice" | "review";
   onAnswered?: (correct: boolean) => void;
   /** Rendered after the answer is revealed, e.g. a "Next" button. */
   footer?: React.ReactNode;
@@ -27,22 +27,33 @@ export function QuestionCard({
   const [selected, setSelected] = useState<OptionId | null>(null);
   const [result, setResult] = useState<{ correct: boolean; key: QuestionKey } | null>(null);
   const [tutorOpen, setTutorOpen] = useState(false);
+  const [checking, startChecking] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   const bookmarked = store.bookmarks.includes(question.id);
-  const topic = topicBySlug[question.topic];
   const showRu = store.showRussian && !!question.stemRu && question.rightsStatus !== "not_cleared";
+  const { recordAttempt } = store;
 
+  // The answer is graded on the server; the key only arrives in the reply.
   const submit = useCallback(() => {
-    if (!selected || result) return;
-    const r = store.answer(question.id, selected, mode);
-    setResult(r);
-    onAnswered?.(r.correct);
-  }, [selected, result, store, question.id, mode, onAnswered]);
+    if (!selected || result || checking) return;
+    setError(null);
+    startChecking(async () => {
+      try {
+        const r = await submitAnswer(question.id, selected, mode);
+        recordAttempt({ questionId: question.id, topic: r.topic, selected, correct: r.correct, mode });
+        setResult(r);
+        onAnswered?.(r.correct);
+      } catch {
+        setError("We couldn't check your answer. Please try again.");
+      }
+    });
+  }, [selected, result, checking, question.id, mode, recordAttempt, onAnswered]);
 
   // Keyboard: 1–4 or A–D to choose, Enter to check.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (tutorOpen || result) return;
+      if (tutorOpen || result || checking) return;
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
       const k = e.key.toUpperCase();
@@ -57,14 +68,14 @@ export function QuestionCard({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [tutorOpen, result, selected, submit]);
+  }, [tutorOpen, result, checking, selected, submit]);
 
   return (
     <>
       <Card className="overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5 sm:px-7">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge>{topic?.nameEn}</Badge>
+            <Badge>{question.topicName}</Badge>
             <SourceBadge origin={question.origin} reviewStatus={question.reviewStatus} />
           </div>
           <div className="flex items-center gap-1">
@@ -105,7 +116,7 @@ export function QuestionCard({
             </p>
           )}
 
-          <fieldset className="mt-6 space-y-2.5" disabled={!!result}>
+          <fieldset className="mt-6 space-y-2.5" disabled={!!result || checking}>
             <legend className="sr-only">Choose one answer</legend>
             {question.options.map((o) => {
               const isSel = selected === o.id;
@@ -158,10 +169,15 @@ export function QuestionCard({
           {!result && (
             <div className="mt-6 flex items-center justify-between gap-3">
               <p className="hidden text-xs text-ink-muted sm:block">Tip: press 1–4 to choose, Enter to check.</p>
-              <Button onClick={submit} disabled={!selected} className="w-full sm:w-auto">
-                Check answer
+              <Button onClick={submit} disabled={!selected || checking} className="w-full sm:w-auto">
+                {checking ? "Checking…" : "Check answer"}
               </Button>
             </div>
+          )}
+          {error && (
+            <p role="alert" className="mt-3 text-sm text-danger">
+              {error}
+            </p>
           )}
         </div>
 
