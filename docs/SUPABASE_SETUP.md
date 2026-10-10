@@ -63,7 +63,8 @@ pnpm exec supabase db push                           # applies every migration t
 `link` asks for the database password from step 1. Type it into your terminal
 only.
 
-`db push` creates the tables but **no questions**. The demo questions are only
+`db push` creates the tables and adds the 20 demo terminology cards (labelled
+demo), but **no questions**. The demo questions are only
 loaded automatically into the local test database. To try them on your
 project, import `content/demo-questions.csv` from the admin area (step 7).
 

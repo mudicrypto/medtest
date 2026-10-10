@@ -97,6 +97,9 @@ test("terminology flashcards: reveal and grade", async ({ page }) => {
   await expect(page.getByText("2 / 10")).toBeVisible();
 
   await page.getByRole("tab", { name: "Word list" }).click();
+  // All 20 cards come from the database.
+  await expect(page.getByRole("main").getByText(/^20 terms/)).toBeVisible();
+  await expect(page.getByRole("main").getByText("General · New").first()).toBeVisible();
   await page.getByPlaceholder("Search in Russian or English…").fill("jaundice");
   await expect(page.getByText("желтуха")).toBeVisible();
 });

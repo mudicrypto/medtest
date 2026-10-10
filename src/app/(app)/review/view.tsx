@@ -1,18 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CalendarClock, CircleCheck } from "lucide-react";
 import { useProgress } from "@/lib/progress-store";
 import { isDue } from "@/lib/srs";
-import { terms } from "@/demo/terms";
+import type { Term } from "@/lib/types";
 import { useQuestions } from "@/lib/use-questions";
 import { QuestionCard } from "@/components/question-card";
 import { TermFlashcard } from "@/components/flashcard";
 import { Button, ButtonLink, EmptyState, PageHeader, ProgressBar, Skeleton } from "@/components/ui";
 
-const termById = Object.fromEntries(terms.map((t) => [t.id, t]));
-
-export function ReviewView() {
+export function ReviewView({ terms }: { terms: Term[] }) {
+  const termById = useMemo(() => Object.fromEntries(terms.map((t) => [t.id, t])), [terms]);
   const store = useProgress();
   const [queue, setQueue] = useState<string[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -26,16 +25,18 @@ export function ReviewView() {
       .map(([id]) => id);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- snapshot queue once data is loaded
     setQueue(due);
-  }, [store.ready, store.cards, store.now, queue]);
+  }, [store.ready, store.cards, store.now, queue, termById]);
 
-  return <ReviewQueue queue={queue} index={index} setIndex={setIndex} />;
+  return <ReviewQueue queue={queue} index={index} setIndex={setIndex} termById={termById} />;
 }
 
 function ReviewQueue({
   queue: snapshot,
   index,
   setIndex,
+  termById,
 }: {
+  termById: Record<string, Term>;
   queue: string[] | null;
   index: number;
   setIndex: React.Dispatch<React.SetStateAction<number>>;

@@ -221,6 +221,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"terms": {
+                  Row: {
+                    "created_at": string,"en": string,"example_en": string | null,"example_ru": string | null,"id": string,"origin": Database["public"]['Enums']["content_origin"],"review_status": Database["public"]['Enums']["review_status"],"rights_status": Database["public"]['Enums']["rights_status"],"ru": string,"topic": string | null,"translit": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"en": string,"example_en"?: string | null,"example_ru"?: string | null,"id": string,"origin": Database["public"]['Enums']["content_origin"],"review_status"?: Database["public"]['Enums']["review_status"],"rights_status": Database["public"]['Enums']["rights_status"],"ru": string,"topic"?: string | null,"translit"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"en"?: string,"example_en"?: string | null,"example_ru"?: string | null,"id"?: string,"origin"?: Database["public"]['Enums']["content_origin"],"review_status"?: Database["public"]['Enums']["review_status"],"rights_status"?: Database["public"]['Enums']["rights_status"],"ru"?: string,"topic"?: string | null,"translit"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "terms_topic_fkey"
+      columns: ["topic"]
+isOneToOne: false
+      referencedRelation: "topics"
+      referencedColumns: ["slug"]
+    }
+                  ]
                 },"topics": {
                   Row: {
                     "name_en": string,"name_ru": string,"slug": string,"sort_order": number

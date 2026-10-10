@@ -75,15 +75,20 @@ export interface TopicWithCount extends Topic {
   questionCount: number;
 }
 
+/** A terminology card, loaded from the `terms` table. */
 export interface Term {
+  /** Permanent ID, e.g. "t-01" (review progress is stored against it). */
   id: string;
   ru: string;
   /** Latin-script pronunciation guide, stressed syllable in capitals. */
   translit: string;
   en: string;
+  /** Specialty slug, or "general". */
   topic: string;
+  topicName: string;
   exampleRu: string;
   exampleEn: string;
+  origin: ContentOrigin;
 }
 
 export interface ExamBlueprint {

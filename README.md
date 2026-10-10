@@ -15,6 +15,11 @@ devices: answer history, mistakes, bookmarks, the review schedule for questions
 and terms, mock exam results, and the Russian-text preference. Terminology cards
 and mock exam formats are still demo content.
 
+**Milestone 5:** the 20 terminology cards now live in the database (`terms`
+table) with their original IDs, so existing review progress is kept. Students
+only see terms whose rights are cleared and that are approved (or labelled
+demo); only admins can change them.
+
 - Plan: [docs/PROPOSAL.md](docs/PROPOSAL.md)
 - Connect your Supabase project: [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
 - Add and review questions: [docs/CONTENT_GUIDE.md](docs/CONTENT_GUIDE.md)
@@ -52,7 +57,7 @@ local URL and publishable key printed by `pnpm db:start` into `.env.local`.
 | `pnpm lint` | Looks for common code mistakes |
 | `pnpm typecheck` | Checks TypeScript types |
 | `pnpm test` | Unit tests: scheduling, analytics, demo content integrity |
-| `pnpm test:db` | Database security tests: profiles, question visibility, answer keys, grading, import, private progress (needs `pnpm db:start`) |
+| `pnpm test:db` | Database security tests: profiles, question visibility, answer keys, grading, import, private progress, terminology (needs `pnpm db:start`) |
 | `pnpm build` | Production build, which fails if anything is broken |
 | `pnpm test:e2e` | Clicks through the built app in a real browser, including sign-up via the test inbox (needs `pnpm db:start` and `pnpm build`) |
 | `pnpm db:types` | Regenerates `src/lib/supabase/database.types.ts` from the local database |
@@ -72,5 +77,5 @@ local URL and publishable key printed by `pnpm db:start` into `.env.local`.
 - `src/lib/content/` holds the CSV format and validation, plus question queries.
 - `content/demo-questions.csv` holds the 18 demo questions (also a worked example of the CSV format).
 - `src/lib/progress-store.tsx` holds the student's progress in the browser while they use the app; every change is saved through `src/app/(app)/progress-actions.ts`.
-- `src/demo/` holds **demo-only** terms and mock exam formats.
+- `src/demo/` holds **demo-only** mock exam formats. Terminology cards are in the `terms` table (added with the 20 demo cards by `supabase/migrations/20261014090000_terms.sql`).
 - `tests/` holds unit tests, database security tests and browser tests.

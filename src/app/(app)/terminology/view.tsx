@@ -4,14 +4,13 @@ import { useMemo, useState } from "react";
 import { CircleCheck, Search } from "lucide-react";
 import { useProgress } from "@/lib/progress-store";
 import { isDue } from "@/lib/srs";
-import { terms } from "@/demo/terms";
-import { topicBySlug } from "@/demo/topics";
+import type { Term } from "@/lib/types";
 import { TermFlashcard } from "@/components/flashcard";
 import { Card, PageHeader, Skeleton, cn } from "@/components/ui";
 
 type Tab = "study" | "browse";
 
-export function TerminologyView() {
+export function TerminologyView({ terms }: { terms: Term[] }) {
   const store = useProgress();
   const [tab, setTab] = useState<Tab>("study");
   const [direction, setDirection] = useState<"ru-en" | "en-ru">("ru-en");
@@ -53,12 +52,12 @@ export function TerminologyView() {
         )}
       </div>
 
-      {!store.ready ? <Skeleton className="h-96" /> : tab === "study" ? <Study direction={direction} /> : <Browse />}
+      {!store.ready ? <Skeleton className="h-96" /> : tab === "study" ? <Study terms={terms} direction={direction} /> : <Browse terms={terms} />}
     </>
   );
 }
 
-function Study({ direction }: { direction: "ru-en" | "en-ru" }) {
+function Study({ terms, direction }: { terms: Term[]; direction: "ru-en" | "en-ru" }) {
   const store = useProgress();
   // Due cards first, then new (never-seen) terms. Snapshot once per visit.
   const [queue] = useState(() => {
@@ -107,13 +106,13 @@ function Study({ direction }: { direction: "ru-en" | "en-ru" }) {
   );
 }
 
-function Browse() {
+function Browse({ terms }: { terms: Term[] }) {
   const store = useProgress();
   const [q, setQ] = useState("");
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
     return s ? terms.filter((t) => t.ru.toLowerCase().includes(s) || t.en.toLowerCase().includes(s)) : terms;
-  }, [q]);
+  }, [q, terms]);
 
   return (
     <>
@@ -141,14 +140,17 @@ function Browse() {
               </div>
               <span className="text-sm text-ink-soft">{t.en}</span>
               <span className="text-xs text-ink-muted">
-                {topicBySlug[t.topic]?.nameEn ?? "General"} · {status}
+                {t.topicName} · {status}
               </span>
             </div>
           );
         })}
         {list.length === 0 && <p className="px-5 py-8 text-center text-sm text-ink-muted">No matching terms.</p>}
       </Card>
-      <p className="mt-3 text-xs text-ink-muted">{terms.length} demo terms · not yet linguistically reviewed</p>
+      <p className="mt-3 text-xs text-ink-muted">
+        {terms.length} terms
+        {terms.some((t) => t.origin === "demo") && " · demo terms are not yet medically or linguistically reviewed"}
+      </p>
     </>
   );
 }

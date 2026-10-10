@@ -72,7 +72,7 @@ export function TermFlashcard({
         <span className="text-xs font-medium uppercase tracking-[0.1em] text-ink-muted">
           {ruFront ? "Russian → English" : "English → Russian"}
         </span>
-        <SourceBadge origin="demo" />
+        <SourceBadge origin={term.origin} />
       </div>
 
       <button

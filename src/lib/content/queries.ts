@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Question, QuestionOption, TopicWithCount, TermRef } from "@/lib/types";
+import type { Question, QuestionOption, Term, TopicWithCount, TermRef } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 
 // Student-facing reads. Row level security limits students to PUBLISHED
@@ -86,4 +86,25 @@ export async function getQuestions(slugs: string[]): Promise<Question[]> {
 export async function getQuestion(slug: string): Promise<Question | null> {
   const [q] = await getQuestions([slug]);
   return q ?? null;
+}
+
+/** Terminology cards, in ID order. Students receive only published terms (row level security). */
+export async function listTerms(): Promise<Term[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("terms")
+    .select("id, ru, translit, en, topic, example_ru, example_en, origin, topics(name_en)")
+    .order("id");
+  if (error) throw new Error(`Could not load terms: ${error.message}`);
+  return (data ?? []).map((t) => ({
+    id: t.id,
+    ru: t.ru,
+    translit: t.translit,
+    en: t.en,
+    topic: t.topic ?? "general",
+    topicName: t.topics?.name_en ?? "General",
+    exampleRu: t.example_ru ?? "",
+    exampleEn: t.example_en ?? "",
+    origin: t.origin,
+  }));
 }

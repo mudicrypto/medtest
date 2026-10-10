@@ -4,7 +4,6 @@ import { dailyStats, openMistakes, overallAccuracy, streakDays, topicStats } fro
 import type { Attempt } from "../../src/lib/types";
 import { readFileSync } from "node:fs";
 import { topics } from "../../src/demo/topics";
-import { terms } from "../../src/demo/terms";
 import { parseQuestionsCsv, toCsv, CSV_COLUMNS, type CsvRecord } from "../../src/lib/content/csv";
 
 const DAY = 86_400_000;
@@ -175,12 +174,5 @@ describe("CSV import validation", () => {
 
   it("the template columns are stable", () => {
     expect(CSV_COLUMNS).toHaveLength(23);
-  });
-});
-
-describe("demo terms", () => {
-  it("term ids are unique and valid card ids", () => {
-    expect(new Set(terms.map((t) => t.id)).size).toBe(terms.length);
-    for (const t of terms) expect(t.id).toMatch(/^[a-z0-9][a-z0-9-]{0,79}$/);
   });
 });
