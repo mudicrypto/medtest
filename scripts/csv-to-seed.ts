@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { parseQuestionsCsv } from "../src/lib/content/csv";
 
-const TOPICS = ["cardiology", "pulmonology", "gastroenterology", "endocrinology", "infectious-diseases", "neurology", "obstetrics", "pediatrics", "surgery"];
+const SPECIALTIES = ["cardiology", "pulmonology", "gastroenterology", "endocrinology", "infectious-diseases", "neurology", "obstetrics", "pediatrics", "surgery", "emergency-medicine"];
 const files = process.argv.slice(2).length ? process.argv.slice(2) : ["content/demo-questions.csv"];
 
 const lit = (v: string | number | null) => (v === null ? "null" : typeof v === "number" ? String(v) : `'${v.replaceAll("'", "''")}'`);
@@ -15,7 +15,7 @@ const out: string[] = [
 ];
 
 for (const file of files) {
-  const { rows, errors, fileErrors } = parseQuestionsCsv(readFileSync(file, "utf8"), TOPICS);
+  const { rows, errors, fileErrors } = parseQuestionsCsv(readFileSync(file, "utf8"), SPECIALTIES);
   if (fileErrors.length || errors.length) {
     console.error(`${file} has problems:`, fileErrors, JSON.stringify(errors, null, 2));
     process.exit(1);
@@ -23,13 +23,13 @@ for (const file of files) {
   out.push(`-- ${file}: ${rows.length} questions`);
   for (const r of rows) {
     out.push(
-      `with q as (insert into public.questions (slug, topic, difficulty, stem_en, stem_ru, key_terms, origin, source_ref, rights_status, review_status, review_note) values (` +
-        [lit(r.slug), lit(r.topic), lit(r.difficulty), lit(r.stem_en), lit(r.stem_ru), `${lit(JSON.stringify(r.key_terms))}::jsonb`, lit(r.origin), lit(r.source_ref), lit(r.rights_status), lit(r.review_status), lit(r.review_note)].join(", ") +
+      `with q as (insert into public.questions (slug, topic, subject, clinical_topic, subtopic, difficulty, stem_en, stem_ru, key_terms, origin, source_ref, rights_status, review_status, review_note) values (` +
+        [lit(r.slug), lit(r.specialty), lit(r.subject), lit(r.topic), lit(r.subtopic), lit(r.difficulty), lit(r.stem_en), lit(r.stem_ru), `${lit(JSON.stringify(r.key_terms))}::jsonb`, lit(r.origin), lit(r.source_ref), lit(r.rights_status), lit(r.review_status), lit(r.review_note)].join(", ") +
         `) returning id),`,
       `o as (insert into public.question_options (question_id, position, text_en, text_ru) select q.id, v.p, v.en, v.ru from q, (values ` +
         r.options.map((o) => `(${lit(o.position)}, ${lit(o.text_en)}, ${lit(o.text_ru)})`).join(", ") +
         `) as v(p, en, ru))`,
-      `insert into public.question_keys (question_id, correct, explanation_en, explanation_ru, tutor_hint) select q.id, ${lit(r.key.correct)}, ${lit(r.key.explanation_en)}, ${lit(r.key.explanation_ru)}, ${lit(r.key.tutor_hint)} from q;`,
+      `insert into public.question_keys (question_id, correct, explanation_en, explanation_ru, tutor_hint, option_explanations, exam_pearl) select q.id, ${lit(r.key.correct)}, ${lit(r.key.explanation_en)}, ${lit(r.key.explanation_ru)}, ${lit(r.key.tutor_hint)}, ${lit(JSON.stringify(r.key.option_explanations))}::jsonb, ${lit(r.key.exam_pearl)} from q;`,
       "",
     );
   }

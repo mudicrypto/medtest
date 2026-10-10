@@ -25,10 +25,10 @@ test("progress follows the student to another device", async ({ browser }) => {
   const one = await newDevice(browser, email);
   const p1 = one.page;
   await expect(p1.getByRole("main").getByText("Answer a few questions")).toBeVisible();
-  await p1.goto("/questions/q-gi-01");
+  await p1.goto("/questions/q-endo-03");
   const main1 = p1.getByRole("main");
   await expect(main1.locator("p[lang=ru]")).toBeVisible();
-  await main1.locator("label", { hasText: "Choledocholithiasis" }).click();
+  await main1.locator("label", { hasText: "Oral fludrocortisone" }).click();
   await main1.getByRole("button", { name: "Check answer" }).click();
   await expect(main1.getByRole("status")).toContainText("Not quite");
   await main1.getByRole("button", { name: "Bookmark question" }).click();
@@ -47,14 +47,14 @@ test("progress follows the student to another device", async ({ browser }) => {
   const p2 = two.page;
   const main2 = p2.getByRole("main");
   await expect(main2.getByText("1 answers")).toBeVisible();
-  await expect(main2.getByText("Gastroenterology")).toBeVisible(); // weakest topic
+  await expect(main2.getByText("Endocrinology")).toBeVisible(); // weakest specialty
 
   await p2.goto("/review/mistakes");
-  await expect(main2.getByText(/painless progressive jaundice/)).toBeVisible();
+  await expect(main2.getByText(/darkening skin/)).toBeVisible();
   await expect(main2.getByText("Missed 1 time")).toBeVisible();
 
   await p2.goto("/bookmarks");
-  await expect(main2.getByText(/painless progressive jaundice/)).toBeVisible();
+  await expect(main2.getByText(/darkening skin/)).toBeVisible();
 
   await p2.goto("/analytics");
   await expect(main2.getByText(/^1 of \d+ questions seen$/)).toBeVisible();
@@ -64,7 +64,7 @@ test("progress follows the student to another device", async ({ browser }) => {
     .from("srs_cards")
     .select("item_id, lapses, reps, due, profiles!inner(id)")
     .eq("item_type", "question")
-    .eq("item_id", "q-gi-01")
+    .eq("item_id", "q-endo-03")
     .eq("user_id", userId)
     .single();
   expect(card).toMatchObject({ lapses: 1, reps: 0 });
@@ -73,7 +73,7 @@ test("progress follows the student to another device", async ({ browser }) => {
   expect(minutes).toBeLessThanOrEqual(10);
 
   // Russian preference was saved to the account.
-  await p2.goto("/questions/q-gi-02");
+  await p2.goto("/questions/q-endo-04");
   await expect(main2.getByRole("button", { name: "RU" })).toHaveAttribute("aria-pressed", "false");
   await expect(main2.locator("p[lang=ru]")).toHaveCount(0);
 

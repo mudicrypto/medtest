@@ -15,7 +15,9 @@ async function signInAs(page: Page, role: "admin" | "student") {
 
 const base = (slug: string): Partial<CsvRecord> => ({
   slug,
-  topic: "neurology",
+  specialty: "neurology",
+  subject: "Cranial nerves",
+  topic: "Trigeminal nerve",
   stem_en: "Which cranial nerve is tested by the corneal reflex (afferent limb)?",
   stem_ru: "Какой черепной нерв обеспечивает афферентное звено роговичного рефлекса?",
   option_a_en: "Facial nerve",
@@ -55,7 +57,7 @@ test("admin: check a CSV, fix errors, import, approve, and the question reaches 
   // 1. A file with a broken row is reported, and can't be imported.
   await page.goto("/admin/import");
   await expect(page.getByLabel("CSV file")).toBeEnabled();
-  await page.getByLabel("CSV file").setInputFiles(csvFile([base(slug), { ...base(`${slug}-b`), correct: "E", topic: "astrology" }]));
+  await page.getByLabel("CSV file").setInputFiles(csvFile([base(slug), { ...base(`${slug}-b`), correct: "E", specialty: "astrology" }]));
   await page.getByRole("button", { name: "Check file" }).click();
   await expect(page.getByText("1 row needs fixing")).toBeVisible();
   await expect(page.getByText("correct must be A, B, C or D")).toBeVisible();

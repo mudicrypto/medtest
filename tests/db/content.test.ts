@@ -30,7 +30,10 @@ async function userWithRole(name: string, role: "student" | "reviewer" | "admin"
 function row(slug: string, overrides: Record<string, unknown> = {}) {
   return {
     slug,
-    topic: "cardiology",
+    specialty: "cardiology",
+    subject: "Test subject",
+    topic: "Test topic",
+    subtopic: null,
     difficulty: 2,
     stem_en: "Test question stem that is long enough?",
     stem_ru: null,
@@ -41,7 +44,7 @@ function row(slug: string, overrides: Record<string, unknown> = {}) {
     source_ref: null,
     review_note: null,
     options: ["A", "B", "C", "D"].map((p) => ({ position: p, text_en: `Option ${p}`, text_ru: null })),
-    key: { correct: "C", explanation_en: "Because C.", explanation_ru: null, tutor_hint: null },
+    key: { correct: "C", explanation_en: "Because C.", explanation_ru: null, tutor_hint: null, option_explanations: { A: "Not A." }, exam_pearl: "Pearl." },
     ...overrides,
   };
 }
@@ -67,7 +70,7 @@ afterAll(async () => {
 describe("students", () => {
   it("can read published questions and their options", async () => {
     const { data } = await student.client.from("questions").select("slug, question_options(position)").like("slug", "q-%");
-    expect(data?.length).toBe(18);
+    expect(data?.length).toBe(20);
     expect(data?.every((q) => q.question_options.length === 4)).toBe(true);
   });
 
@@ -102,6 +105,37 @@ describe("students", () => {
     expect(ins.error).not.toBeNull();
   });
 
+  it("checks answers on the server: correct, incorrect, with per-option explanations and the exam pearl", async () => {
+    const right = await student.client.rpc("submit_answer", { p_slug: "q-em-02", p_selected: "B" }).single();
+    expect(right.error).toBeNull();
+    expect(right.data).toMatchObject({ correct: "B", is_correct: true, selected: "B", topic: "emergency-medicine", duplicate: false });
+    expect(Object.keys(right.data!.option_explanations as object).sort()).toEqual(["A", "C", "D"]);
+    expect(right.data!.exam_pearl).toMatch(/chest compressions/);
+
+    for (const wrong of ["A", "C", "D"]) {
+      const r = await student.client.rpc("submit_answer", { p_slug: "q-em-02", p_selected: wrong }).single();
+      expect(r.data).toMatchObject({ correct: "B", is_correct: false, selected: wrong });
+    }
+  });
+
+  it("records a re-sent submission only once (duplicate protection)", async () => {
+    const count = async () => (await student.client.from("attempts").select("id")).data!.length;
+    const id = crypto.randomUUID();
+    const before = await count();
+    const first = await student.client.rpc("submit_answer", { p_slug: "q-neuro-03", p_selected: "B", p_client_id: id }).single();
+    const again = await student.client.rpc("submit_answer", { p_slug: "q-neuro-03", p_selected: "B", p_client_id: id }).single();
+    expect(first.data).toMatchObject({ is_correct: false, duplicate: false });
+    expect(again.data).toMatchObject({ is_correct: false, selected: "B", duplicate: true });
+    expect((await count()) - before).toBe(1);
+
+    // The same ID can't be reused for a different question.
+    const misuse = await student.client.rpc("submit_answer", { p_slug: "q-neuro-04", p_selected: "B", p_client_id: id });
+    expect(misuse.error).not.toBeNull();
+    // Another student may use the same ID without clashing.
+    const other = await reviewer.client.rpc("submit_answer", { p_slug: "q-neuro-03", p_selected: "A", p_client_id: id }).single();
+    expect(other.data).toMatchObject({ is_correct: true, duplicate: false });
+  });
+
   it("rejects invalid answers", async () => {
     const { error } = await student.client.rpc("submit_answer", { p_slug: "q-card-01", p_selected: "E" });
     expect(error).not.toBeNull();
@@ -121,14 +155,14 @@ describe("students", () => {
   it("mock grading records only answered questions and returns every key", async () => {
     const before = (await student.client.from("attempts").select("id")).data!.length;
     const { data, error } = await student.client.rpc("grade_mock", {
-      p_slugs: ["q-pulm-02", "q-ped-02", "q-surg-01"],
-      p_answers: { "q-pulm-02": "C", "q-ped-02": "B" },
+      p_slugs: ["q-pulm-02", "q-em-01", "q-em-03"],
+      p_answers: { "q-pulm-02": "C", "q-em-01": "B" },
     });
     expect(error).toBeNull();
     const bySlug = Object.fromEntries((data ?? []).map((r) => [r.slug, r]));
     expect(bySlug["q-pulm-02"]).toMatchObject({ selected: "C", correct: "C", is_correct: true });
-    expect(bySlug["q-ped-02"]).toMatchObject({ selected: "B", correct: "A", is_correct: false });
-    expect(bySlug["q-surg-01"]).toMatchObject({ selected: null, correct: "C", is_correct: false });
+    expect(bySlug["q-em-01"]).toMatchObject({ selected: "B", correct: "A", is_correct: false });
+    expect(bySlug["q-em-03"]).toMatchObject({ selected: null, correct: "D", is_correct: false });
     const after = (await student.client.from("attempts").select("id")).data!.length;
     expect(after - before).toBe(2);
   });
@@ -161,7 +195,7 @@ describe("reviewers", () => {
 describe("admins and the publication rule", () => {
   it("import is all-or-nothing", async () => {
     const { error } = await adminUser.client.rpc("import_questions", {
-      p_rows: [row(`${PREFIX}-ok`), row(`${PREFIX}-bad`, { topic: "astrology" })] as unknown as Json,
+      p_rows: [row(`${PREFIX}-ok`), row(`${PREFIX}-bad`, { specialty: "astrology" })] as unknown as Json,
     });
     expect(error).not.toBeNull();
     const { data } = await admin.from("questions").select("slug").in("slug", [`${PREFIX}-ok`, `${PREFIX}-bad`]);
@@ -174,8 +208,19 @@ describe("admins and the publication rule", () => {
     const { data } = await adminUser.client
       .rpc("import_questions", { p_rows: [row(slug, { stem_en: "An updated question stem here?" })] as unknown as Json });
     expect(data).toEqual([{ slug, action: "updated" }]);
-    const { data: q } = await admin.from("questions").select("version, stem_en").eq("slug", slug).single();
-    expect(q).toMatchObject({ version: 2, stem_en: "An updated question stem here?" });
+    const { data: q } = await admin
+      .from("questions")
+      .select("version, stem_en, topic, subject, clinical_topic, question_keys(option_explanations, exam_pearl)")
+      .eq("slug", slug)
+      .single();
+    expect(q).toMatchObject({
+      version: 2,
+      stem_en: "An updated question stem here?",
+      topic: "cardiology",
+      subject: "Test subject",
+      clinical_topic: "Test topic",
+      question_keys: { option_explanations: { A: "Not A." }, exam_pearl: "Pearl." },
+    });
   });
 
   it("approved questions stay hidden when rights aren't cleared", async () => {
@@ -188,10 +233,10 @@ describe("admins and the publication rule", () => {
   });
 
   it("retired questions disappear for students, demo included", async () => {
-    await adminUser.client.rpc("set_review_status", { p_slug: "q-obs-02", p_status: "retired" });
-    const { data } = await student.client.from("questions").select("slug").eq("slug", "q-obs-02");
+    await adminUser.client.rpc("set_review_status", { p_slug: "q-em-04", p_status: "retired" });
+    const { data } = await student.client.from("questions").select("slug").eq("slug", "q-em-04");
     expect(data).toEqual([]);
-    await admin.from("questions").update({ review_status: "draft" }).eq("slug", "q-obs-02");
+    await admin.from("questions").update({ review_status: "draft" }).eq("slug", "q-em-04");
   });
 
   it("official material must cite a source", async () => {

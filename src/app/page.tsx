@@ -28,7 +28,7 @@ const labels = [
   { icon: BadgeCheck, tone: "accent" as const, label: "Official source · verified", text: "Matches published official material, with a citation and verification date." },
   { icon: FileText, tone: "neutral" as const, label: "Adapted from official source", text: "Based on official material, reworded or translated — always marked as adapted." },
   { icon: PenLine, tone: "neutral" as const, label: "MedPrep original practice", text: "Written by our team to teach the topic. Never presented as an official item." },
-  { icon: FlaskConical, tone: "warning" as const, label: "DEMO — not for study", text: "Placeholder content in this prototype only." },
+  { icon: FlaskConical, tone: "warning" as const, label: "Illustrative demo · unreviewed", text: "Original example questions for trying the app, shown until validated by a qualified medical reviewer." },
 ];
 
 export default function Home() {

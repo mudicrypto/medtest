@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { listTopicsWithCounts } from "@/lib/content/queries";
+import { listQuestionRefs, listTopicsWithCounts } from "@/lib/content/queries";
 import { PageHeader, Skeleton } from "@/components/ui";
 import { PracticeView } from "./view";
 
@@ -12,7 +12,7 @@ export default function Page() {
       <PageHeader
         eyebrow="Question bank"
         title="Practice"
-        description="Pick one or more topics — or leave them all unselected for a mixed set. You'll see the answer and explanation after each question."
+        description="Pick specialties and, optionally, topics — or leave everything unselected for a mixed set. You'll see the answer and explanation after each question."
       />
       <Suspense fallback={<Skeleton className="h-[420px]" />}>
         <Topics />
@@ -22,5 +22,6 @@ export default function Page() {
 }
 
 async function Topics() {
-  return <PracticeView topics={await listTopicsWithCounts()} />;
+  const [specialties, refs] = await Promise.all([listTopicsWithCounts(), listQuestionRefs()]);
+  return <PracticeView specialties={specialties} refs={refs} />;
 }

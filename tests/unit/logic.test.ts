@@ -5,7 +5,9 @@ import type { Attempt } from "../../src/lib/types";
 import { readFileSync } from "node:fs";
 import { topics } from "../../src/demo/topics";
 import { terms } from "../../src/demo/terms";
-import { parseQuestionsCsv, toCsv, CSV_COLUMNS, type CsvRecord } from "../../src/lib/content/csv";
+import { parseQuestionsCsv, recordToCsv, toCsv, CSV_COLUMNS, type CsvRecord } from "../../src/lib/content/csv";
+import { validateRecord } from "../../src/lib/content/model";
+import { demoBank } from "../../content/demo-bank";
 
 const DAY = 86_400_000;
 const NOW = new Date("2026-10-10T12:00:00").getTime();
@@ -45,7 +47,7 @@ describe("analytics", () => {
     ({ card: "cardiology", pulm: "pulmonology", gi: "gastroenterology" })[id.split("-")[1] as "card" | "pulm" | "gi"];
   const a = (questionId: string, correct: boolean, at: number): Attempt => ({
     questionId,
-    topic: topicOf(questionId),
+    specialty: topicOf(questionId),
     correct,
     at,
     selected: "A",
@@ -80,33 +82,56 @@ describe("analytics", () => {
   });
 });
 
-const TOPIC_SLUGS = topics.map((t) => t.slug);
+const SPECIALTIES = [...topics.map((t) => t.slug), "emergency-medicine"];
 const demoCsv = readFileSync("content/demo-questions.csv", "utf8");
 
-describe("demo question bank (content/demo-questions.csv)", () => {
-  const { rows, errors, fileErrors } = parseQuestionsCsv(demoCsv, TOPIC_SLUGS);
+describe("illustrative demo bank", () => {
+  const { rows, errors, fileErrors } = parseQuestionsCsv(demoCsv, SPECIALTIES);
 
-  it("parses with no errors", () => {
-    expect(fileErrors).toEqual([]);
-    expect(errors).toEqual([]);
-    expect(rows).toHaveLength(18);
+  it("has 20 valid questions, 4 in each required specialty", () => {
+    expect(demoBank).toHaveLength(20);
+    for (const q of demoBank) expect(validateRecord(q), q.id).toEqual([]);
+    const per = Object.fromEntries(["cardiology", "pulmonology", "neurology", "endocrinology", "emergency-medicine"].map((sp) => [sp, demoBank.filter((q) => q.specialty === sp).length]));
+    expect(per).toEqual({ cardiology: 4, pulmonology: 4, neurology: 4, endocrinology: 4, "emergency-medicine": 4 });
+    expect(new Set(demoBank.map((q) => q.id)).size).toBe(20);
   });
 
-  it("every question is labelled demo, not reviewed, with four options and a valid key", () => {
-    for (const r of rows) {
-      expect(r.origin, r.slug).toBe("demo");
-      expect(r.review_status, r.slug).toBe("draft");
-      expect(r.options.map((o) => o.position)).toEqual(["A", "B", "C", "D"]);
-      expect(["A", "B", "C", "D"]).toContain(r.key.correct);
-      expect(r.key.explanation_en.length, r.slug).toBeGreaterThan(40);
+  it("every question is labelled illustrative and unreviewed", () => {
+    for (const q of demoBank) {
+      expect(q.origin, q.id).toBe("demo");
+      expect(q.reviewStatus, q.id).toBe("draft");
+      expect(q.reviewNote, q.id).toMatch(/not yet validated by a qualified medical reviewer/i);
     }
+  });
+
+  it("every question has full teaching content", () => {
+    for (const q of demoBank) {
+      expect(q.subject && q.topic && q.subtopic, q.id).toBeTruthy();
+      expect(q.stemRu, q.id).toBeTruthy();
+      expect(q.examPearl, q.id).toBeTruthy();
+      expect(q.keyTerms.length, q.id).toBeGreaterThan(0);
+      expect(q.explanationEn.length, q.id).toBeGreaterThan(40);
+    }
+  });
+
+  it("uses a spread of correct-answer positions", () => {
+    const counts = Object.fromEntries(["A", "B", "C", "D"].map((p) => [p, demoBank.filter((q) => q.correct === p).length]));
+    for (const p of ["A", "B", "C", "D"]) expect(counts[p], p).toBeGreaterThanOrEqual(2);
+  });
+
+  it("the CSV file is up to date with content/demo-bank.ts (run pnpm content:build)", () => {
+    expect(fileErrors).toEqual([]);
+    expect(errors).toEqual([]);
+    expect(demoCsv).toBe(toCsv(demoBank.map(recordToCsv)) + "\n");
+    expect(rows.map((r) => r.slug)).toEqual(demoBank.map((q) => q.id));
+    expect(rows[0].key.option_explanations).toEqual(demoBank[0].optionExplanations);
   });
 
   it("Russian text contains no Latin letters mixed into Cyrillic words", () => {
     const mixed = /[а-яё][a-z]|[a-z][а-яё]/i;
-    for (const r of rows) {
-      for (const text of [r.stem_ru ?? "", ...r.options.map((o) => o.text_ru ?? "")]) {
-        expect(mixed.test(text), `${r.slug}: ${text}`).toBe(false);
+    for (const q of demoBank) {
+      for (const text of [q.stemRu ?? "", q.explanationRu ?? "", ...q.options.map((o) => o.textRu ?? ""), ...q.keyTerms.map((t) => t.ru)]) {
+        expect(mixed.test(text), `${q.id}: ${text}`).toBe(false);
       }
     }
   });
@@ -115,7 +140,9 @@ describe("demo question bank (content/demo-questions.csv)", () => {
 describe("CSV import validation", () => {
   const good: Partial<CsvRecord> = {
     slug: "test-01",
-    topic: "cardiology",
+    specialty: "cardiology",
+    subject: "Arrhythmias",
+    topic: "Atrial fibrillation",
     stem_en: "Which drug is first-line for this stable patient?",
     option_a_en: "One",
     option_b_en: "Two",
@@ -126,17 +153,23 @@ describe("CSV import validation", () => {
     key_terms: "тахикардия = tachycardia; одышка = dyspnoea",
     origin: "original_practice",
     rights_status: "owned",
+    why_a: "Because not one.",
+    exam_pearl: "Remember two.",
   };
 
   it("accepts a valid row and fills sensible defaults", () => {
-    const { rows, errors } = parseQuestionsCsv(toCsv([good]), TOPIC_SLUGS);
+    const { rows, errors } = parseQuestionsCsv(toCsv([good]), SPECIALTIES);
     expect(errors).toEqual([]);
     expect(rows[0]).toMatchObject({
       slug: "test-01",
+      specialty: "cardiology",
+      subject: "Arrhythmias",
+      topic: "Atrial fibrillation",
+      subtopic: null,
       difficulty: 2,
       review_status: "in_review",
       stem_ru: null,
-      key: { correct: "B" },
+      key: { correct: "B", option_explanations: { A: "Because not one." }, exam_pearl: "Remember two." },
       key_terms: [
         { ru: "тахикардия", en: "tachycardia" },
         { ru: "одышка", en: "dyspnoea" },
@@ -145,36 +178,37 @@ describe("CSV import validation", () => {
   });
 
   it("reports every problem in a bad row, with its spreadsheet line number", () => {
-    const bad = { ...good, slug: "Bad Slug!", topic: "astrology", correct: "E", origin: "official", key_terms: "no equals sign" };
-    const { rows, errors } = parseQuestionsCsv(toCsv([good, bad]), TOPIC_SLUGS);
+    const bad = { ...good, slug: "Bad Slug!", specialty: "astrology", topic: "", correct: "E", origin: "official", key_terms: "no equals sign" };
+    const { rows, errors } = parseQuestionsCsv(toCsv([good, bad]), SPECIALTIES);
     expect(rows).toHaveLength(1);
     expect(errors).toHaveLength(1);
     expect(errors[0].line).toBe(3);
     const text = errors[0].messages.join(" | ");
     expect(text).toMatch(/slug must be/);
-    expect(text).toMatch(/topic must be one of/);
+    expect(text).toMatch(/specialty must be one of/);
+    expect(text).toMatch(/topic is required/);
     expect(text).toMatch(/correct must be A, B, C or D/);
     expect(text).toMatch(/origin must be one of/);
     expect(text).toMatch(/key_terms/);
   });
 
   it("flags duplicate slugs within one file", () => {
-    const { errors } = parseQuestionsCsv(toCsv([good, good]), TOPIC_SLUGS);
+    const { errors } = parseQuestionsCsv(toCsv([good, good]), SPECIALTIES);
     expect(errors[0].messages.join()).toMatch(/also used on line 2/);
   });
 
   it("rejects files with missing columns", () => {
-    const { fileErrors } = parseQuestionsCsv("slug,topic\na,b\n", TOPIC_SLUGS);
+    const { fileErrors } = parseQuestionsCsv("slug,topic\na,b\n", SPECIALTIES);
     expect(fileErrors[0]).toMatch(/Missing columns/);
   });
 
   it("handles a UTF-8 byte-order mark (Excel's 'CSV UTF-8' export)", () => {
-    const { rows } = parseQuestionsCsv("\uFEFF" + toCsv([good]), TOPIC_SLUGS);
+    const { rows } = parseQuestionsCsv("\uFEFF" + toCsv([good]), SPECIALTIES);
     expect(rows).toHaveLength(1);
   });
 
   it("the template columns are stable", () => {
-    expect(CSV_COLUMNS).toHaveLength(23);
+    expect(CSV_COLUMNS).toHaveLength(31);
   });
 });
 

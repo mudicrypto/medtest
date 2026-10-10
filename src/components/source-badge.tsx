@@ -7,10 +7,11 @@ const originMeta: Record<
   { label: string; tone: "neutral" | "accent" | "warning"; icon: typeof BadgeCheck; title: string }
 > = {
   demo: {
-    label: "DEMO — not for study",
+    label: "Illustrative demo · unreviewed",
     tone: "warning",
     icon: FlaskConical,
-    title: "Placeholder content for the prototype. Not reviewed and not official.",
+    title:
+      "An illustrative original question written to demonstrate the app. It has not been validated by a qualified medical reviewer and is not official exam content.",
   },
   original_practice: {
     label: "MedPrep original practice",
@@ -33,7 +34,7 @@ const originMeta: Record<
 };
 
 const reviewLabel: Record<ReviewStatus, string> = {
-  draft: "Not medically reviewed",
+  draft: "Awaiting medical review",
   in_review: "In medical review",
   approved: "Medically reviewed",
   retired: "Retired",

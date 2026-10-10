@@ -68,7 +68,7 @@ export function MockRunView() {
         const { grades, summary, cards } = await submitMock(blueprint.id, ids, answers, (Date.now() - startedAt) / 1000);
         for (const g of grades) {
           if (g.selected) {
-            recordAttempt({ questionId: g.questionId, topic: g.topic, selected: g.selected, correct: g.isCorrect, mode: "mock" }, cards[g.questionId]);
+            recordAttempt({ questionId: g.questionId, specialty: g.specialty, selected: g.selected, correct: g.isCorrect, mode: "mock" }, cards[g.questionId]);
           }
         }
         addMock(summary, cards);
@@ -306,15 +306,15 @@ function Results({ result, grades, questions }: { result: MockSummary; grades: M
   const blueprint = blueprints.find((b) => b.id === result.blueprintId)!;
 
   const questionById = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions]);
-  const topicName = (slug: string) => questions.find((q) => q.topic === slug)?.topicName ?? slug;
+  const topicName = (slug: string) => questions.find((q) => q.specialty === slug)?.specialtyName ?? slug;
 
   const byTopic = useMemo(() => {
     const m = new Map<string, { correct: number; total: number }>();
     for (const g of grades) {
-      const cur = m.get(g.topic) ?? { correct: 0, total: 0 };
+      const cur = m.get(g.specialty) ?? { correct: 0, total: 0 };
       cur.total++;
       if (g.isCorrect) cur.correct++;
-      m.set(g.topic, cur);
+      m.set(g.specialty, cur);
     }
     return [...m.entries()].sort((a, b) => a[1].correct / a[1].total - b[1].correct / b[1].total);
   }, [grades]);
@@ -342,7 +342,7 @@ function Results({ result, grades, questions }: { result: MockSummary; grades: M
       </Card>
 
       <Card className="mt-4 p-6">
-        <h2 className="font-semibold text-ink">By topic</h2>
+        <h2 className="font-semibold text-ink">By specialty</h2>
         <ul className="mt-4 space-y-3">
           {byTopic.map(([slug, v]) => (
             <li key={slug} className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1.5 text-sm">

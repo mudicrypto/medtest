@@ -34,11 +34,20 @@ export interface QuestionOption {
   textRu?: string;
 }
 
+/**
+ * A question as students see it BEFORE answering: no correct answer and no
+ * explanations. The full authored model is QuestionRecord (src/lib/content/model.ts).
+ */
 export interface Question {
   /** Public identifier (the database slug), e.g. "q-card-01". */
   id: string;
-  topic: string; // Topic slug
-  topicName: string;
+  /** Specialty slug, e.g. "cardiology" — the top level used for filtering. */
+  specialty: string;
+  specialtyName: string;
+  subject: string;
+  /** Clinical topic within the subject, e.g. "Acute coronary syndrome". */
+  topic: string;
+  subtopic?: string;
   stemEn: string;
   /** Russian text is only shown when rights are cleared for it. */
   stemRu?: string;
@@ -60,6 +69,9 @@ export interface QuestionKey {
   correct: QuestionOption["id"];
   explanationEn: string;
   explanationRu: string | null;
+  /** Why each (incorrect) option is wrong. */
+  optionExplanations: Partial<Record<QuestionOption["id"], string>>;
+  examPearl: string | null;
   /** Short reply used by the demo tutor. */
   tutorHint: string;
 }
@@ -68,7 +80,7 @@ export interface QuestionKey {
 export interface GradeResult {
   correct: boolean;
   key: QuestionKey;
-  topic: string;
+  specialty: string;
 }
 
 export interface TopicWithCount extends Topic {
@@ -98,8 +110,8 @@ export interface ExamBlueprint {
 
 export interface Attempt {
   questionId: string;
-  /** Topic slug, stored with the attempt so analytics needn't look questions up. */
-  topic: string;
+  /** Specialty slug, stored with the attempt so analytics needn't look questions up. */
+  specialty: string;
   selected: QuestionOption["id"];
   correct: boolean;
   at: number; // epoch ms

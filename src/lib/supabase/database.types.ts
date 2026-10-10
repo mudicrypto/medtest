@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "attempts": {
                   Row: {
-                    "answered_at": string,"id": number,"is_correct": boolean,"mode": Database["public"]['Enums']["attempt_mode"],"question_id": string,"selected": string | null,"user_id": string
+                    "answered_at": string,"client_id": string | null,"id": number,"is_correct": boolean,"mode": Database["public"]['Enums']["attempt_mode"],"question_id": string,"selected": string | null,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "answered_at"?: string,"id"?: never,"is_correct": boolean,"mode": Database["public"]['Enums']["attempt_mode"],"question_id": string,"selected"?: string | null,"user_id": string
+                    "answered_at"?: string,"client_id"?: string | null,"id"?: never,"is_correct": boolean,"mode": Database["public"]['Enums']["attempt_mode"],"question_id": string,"selected"?: string | null,"user_id": string
                   }
                   Update: {
-                    "answered_at"?: string,"id"?: never,"is_correct"?: boolean,"mode"?: Database["public"]['Enums']["attempt_mode"],"question_id"?: string,"selected"?: string | null,"user_id"?: string
+                    "answered_at"?: string,"client_id"?: string | null,"id"?: never,"is_correct"?: boolean,"mode"?: Database["public"]['Enums']["attempt_mode"],"question_id"?: string,"selected"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -131,14 +131,14 @@ isOneToOne: false
                   ]
                 },"question_keys": {
                   Row: {
-                    "correct": string,"explanation_en": string,"explanation_ru": string | null,"question_id": string,"references": string | null,"tutor_hint": string | null
+                    "correct": string,"exam_pearl": string | null,"explanation_en": string,"explanation_ru": string | null,"option_explanations": NonNullable<Json>,"question_id": string,"references": string | null,"tutor_hint": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "correct": string,"explanation_en": string,"explanation_ru"?: string | null,"question_id": string,"references"?: string | null,"tutor_hint"?: string | null
+                    "correct": string,"exam_pearl"?: string | null,"explanation_en": string,"explanation_ru"?: string | null,"option_explanations"?: NonNullable<Json>,"question_id": string,"references"?: string | null,"tutor_hint"?: string | null
                   }
                   Update: {
-                    "correct"?: string,"explanation_en"?: string,"explanation_ru"?: string | null,"question_id"?: string,"references"?: string | null,"tutor_hint"?: string | null
+                    "correct"?: string,"exam_pearl"?: string | null,"explanation_en"?: string,"explanation_ru"?: string | null,"option_explanations"?: NonNullable<Json>,"question_id"?: string,"references"?: string | null,"tutor_hint"?: string | null
                   }
                   Relationships: [
                     {
@@ -171,14 +171,14 @@ isOneToOne: false
                   ]
                 },"questions": {
                   Row: {
-                    "created_at": string,"difficulty": number,"id": string,"key_terms": NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"review_note": string | null,"review_status": Database["public"]['Enums']["review_status"],"reviewed_at": string | null,"reviewed_by": string | null,"rights_status": Database["public"]['Enums']["rights_status"],"slug": string,"source_id": string | null,"source_ref": string | null,"stem_en": string,"stem_ru": string | null,"topic": string,"updated_at": string,"version": number,"is_published": boolean | null
+                    "clinical_topic": string,"created_at": string,"difficulty": number,"id": string,"key_terms": NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"review_note": string | null,"review_status": Database["public"]['Enums']["review_status"],"reviewed_at": string | null,"reviewed_by": string | null,"rights_status": Database["public"]['Enums']["rights_status"],"slug": string,"source_id": string | null,"source_ref": string | null,"stem_en": string,"stem_ru": string | null,"subject": string,"subtopic": string | null,"topic": string,"updated_at": string,"version": number,"is_published": boolean | null
                   }
                   ComputedFields: "is_published"
                   Insert: {
-                    "created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status": Database["public"]['Enums']["rights_status"],"slug": string,"source_id"?: string | null,"source_ref"?: string | null,"stem_en": string,"stem_ru"?: string | null,"topic": string,"updated_at"?: string,"version"?: number
+                    "clinical_topic"?: string,"created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status": Database["public"]['Enums']["rights_status"],"slug": string,"source_id"?: string | null,"source_ref"?: string | null,"stem_en": string,"stem_ru"?: string | null,"subject"?: string,"subtopic"?: string | null,"topic": string,"updated_at"?: string,"version"?: number
                   }
                   Update: {
-                    "created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin"?: Database["public"]['Enums']["content_origin"],"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status"?: Database["public"]['Enums']["rights_status"],"slug"?: string,"source_id"?: string | null,"source_ref"?: string | null,"stem_en"?: string,"stem_ru"?: string | null,"topic"?: string,"updated_at"?: string,"version"?: number
+                    "clinical_topic"?: string,"created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin"?: Database["public"]['Enums']["content_origin"],"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status"?: Database["public"]['Enums']["rights_status"],"slug"?: string,"source_id"?: string | null,"source_ref"?: string | null,"stem_en"?: string,"stem_ru"?: string | null,"subject"?: string,"subtopic"?: string | null,"topic"?: string,"updated_at"?: string,"version"?: number
                   }
                   Relationships: [
                     {
@@ -264,8 +264,8 @@ isOneToOne: false
 { Args: { "p_note"?: string,"p_slug": string,"p_status": Database["public"]['Enums']["review_status"] }; Returns: undefined
                            },
 "submit_answer":
-{ Args: { "p_mode"?: Database["public"]['Enums']["attempt_mode"],"p_selected": string,"p_slug": string }; Returns: {
-              "correct": string,"explanation_en": string,"explanation_ru": string,"is_correct": boolean,"topic": string,"tutor_hint": string
+{ Args: { "p_client_id"?: string,"p_mode"?: Database["public"]['Enums']["attempt_mode"],"p_selected": string,"p_slug": string }; Returns: {
+              "correct": string,"duplicate": boolean,"exam_pearl": string,"explanation_en": string,"explanation_ru": string,"is_correct": boolean,"option_explanations": Json,"selected": string,"topic": string,"tutor_hint": string
             }[]
                            }
           }

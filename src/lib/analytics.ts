@@ -11,7 +11,7 @@ export interface TopicStat {
 
 export function topicStats(attempts: Attempt[], topics: Topic[]): TopicStat[] {
   return topics.map((t) => {
-    const mine = attempts.filter((a) => a.topic === t.slug);
+    const mine = attempts.filter((a) => a.specialty === t.slug);
     const correct = mine.filter((a) => a.correct).length;
     return {
       slug: t.slug,

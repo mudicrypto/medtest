@@ -15,7 +15,7 @@
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "test:db": "vitest run --config vitest.db.config.mts",
-    "content:seed": "tsx scripts/csv-to-seed.ts"
+    "content:build": "tsx scripts/build-content.ts && tsx scripts/csv-to-seed.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

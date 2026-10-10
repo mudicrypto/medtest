@@ -6,28 +6,41 @@ import { ArrowRight, Check, Languages } from "lucide-react";
 import { useProgress } from "@/lib/progress-store";
 import { topicStats } from "@/lib/analytics";
 import type { TopicWithCount } from "@/lib/types";
+import type { QuestionRef } from "@/lib/content/queries";
 import { Button, Card, cn } from "@/components/ui";
 
 const sizes = [5, 10, 20] as const;
 
-export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
+export function PracticeView({ specialties: all, refs }: { specialties: TopicWithCount[]; refs: QuestionRef[] }) {
   const router = useRouter();
   const store = useProgress();
   const [picked, setPicked] = useState<string[]>([]);
+  const [pickedTopics, setPickedTopics] = useState<string[]>([]);
   const [size, setSize] = useState<(typeof sizes)[number]>(10);
 
-  const stats = Object.fromEntries(topicStats(store.attempts, topics).map((t) => [t.slug, t]));
-  const available = topics
-    .filter((t) => picked.length === 0 || picked.includes(t.slug))
-    .reduce((sum, t) => sum + t.questionCount, 0);
+  // Only specialties that currently have questions.
+  const specialties = all.filter((t) => t.questionCount > 0);
+  const stats = Object.fromEntries(topicStats(store.attempts, specialties).map((t) => [t.slug, t]));
+  const inSpecialties = refs.filter((r) => picked.length === 0 || picked.includes(r.specialty));
+  // Topics within the chosen specialties, with how many questions each has.
+  const topicCounts = new Map<string, number>();
+  for (const r of inSpecialties) if (r.topic) topicCounts.set(r.topic, (topicCounts.get(r.topic) ?? 0) + 1);
+  const topics = [...topicCounts.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  const activeTopics = pickedTopics.filter((t) => topicCounts.has(t));
+  const available = inSpecialties.filter((r) => activeTopics.length === 0 || activeTopics.includes(r.topic)).length;
 
   function toggle(slug: string) {
     setPicked((p) => (p.includes(slug) ? p.filter((x) => x !== slug) : [...p, slug]));
   }
 
+  function toggleTopic(topic: string) {
+    setPickedTopics((p) => (p.includes(topic) ? p.filter((x) => x !== topic) : [...p, topic]));
+  }
+
   function start() {
     const params = new URLSearchParams({ n: String(size) });
-    if (picked.length) params.set("topics", picked.join(","));
+    if (picked.length) params.set("specialties", picked.join(","));
+    for (const t of activeTopics) params.append("topic", t);
     router.push(`/practice/session?${params}`);
   }
 
@@ -35,15 +48,22 @@ export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
     <>
       <Card className="p-5 sm:p-7">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink">Topics</h2>
-          {picked.length > 0 && (
-            <button type="button" onClick={() => setPicked([])} className="text-sm text-accent hover:underline">
+          <h2 className="text-sm font-semibold text-ink">Specialties</h2>
+          {(picked.length > 0 || activeTopics.length > 0) && (
+            <button
+              type="button"
+              onClick={() => {
+                setPicked([]);
+                setPickedTopics([]);
+              }}
+              className="text-sm text-accent hover:underline"
+            >
               Clear
             </button>
           )}
         </div>
         <div className="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-          {topics.map((t) => {
+          {specialties.map((t) => {
             const on = picked.includes(t.slug);
             const st = stats[t.slug];
             const count = t.questionCount;
@@ -82,6 +102,34 @@ export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
             );
           })}
         </div>
+
+        {topics.length > 0 && (
+          <div className="mt-6">
+            <h2 className="text-sm font-semibold text-ink">
+              Topics <span className="font-normal text-ink-muted">(optional)</span>
+            </h2>
+            <p className="mt-0.5 text-xs text-ink-muted">Narrow down further, or leave empty for every topic.</p>
+            <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Topics">
+              {topics.map(([topic, count]) => {
+                const on = activeTopics.includes(topic);
+                return (
+                  <button
+                    key={topic}
+                    type="button"
+                    onClick={() => toggleTopic(topic)}
+                    aria-pressed={on}
+                    className={cn(
+                      "rounded-full border px-3 py-1.5 text-sm transition-colors",
+                      on ? "border-accent bg-accent text-white" : "border-line text-ink-soft hover:border-line-strong hover:bg-sunken/50",
+                    )}
+                  >
+                    {topic} <span className={on ? "text-white/80" : "text-ink-muted"}>· {count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="mt-8 flex flex-col gap-6 border-t border-line pt-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex flex-wrap gap-8">

@@ -140,6 +140,7 @@ export function ImportForm({ sources }: { sources: { id: string; title: string }
                 <thead>
                   <tr className="border-b border-line text-xs text-ink-muted">
                     <th className="py-2 pr-3 font-medium">Slug</th>
+                    <th className="py-2 pr-3 font-medium">Specialty</th>
                     <th className="py-2 pr-3 font-medium">Topic</th>
                     <th className="py-2 pr-3 font-medium">Origin</th>
                     <th className="py-2 pr-3 font-medium">Rights</th>
@@ -150,6 +151,7 @@ export function ImportForm({ sources }: { sources: { id: string; title: string }
                   {state.sample.map((r) => (
                     <tr key={r.slug} className="border-b border-line/60">
                       <td className="py-2 pr-3 font-mono text-xs">{r.slug}</td>
+                      <td className="py-2 pr-3">{r.specialty}</td>
                       <td className="py-2 pr-3">{r.topic}</td>
                       <td className="py-2 pr-3">{r.origin}</td>
                       <td className="py-2 pr-3">{r.rights_status}</td>

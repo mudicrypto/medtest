@@ -57,7 +57,7 @@ async function QuestionTable({ searchParams }: { searchParams: PageProps<"/admin
           </select>
         </label>
         <label className="flex flex-col gap-1 text-xs text-ink-muted">
-          Topic
+          Specialty
           <select name="topic" defaultValue={filters.topic} className={select}>
             <option value="">All</option>
             {topics.map((t) => (
@@ -80,7 +80,7 @@ async function QuestionTable({ searchParams }: { searchParams: PageProps<"/admin
           <thead>
             <tr className="border-b border-line text-xs text-ink-muted">
               <th className="px-4 py-3 font-medium">Question</th>
-              <th className="px-4 py-3 font-medium">Topic</th>
+              <th className="px-4 py-3 font-medium">Specialty · topic</th>
               <th className="px-4 py-3 font-medium">Origin</th>
               <th className="px-4 py-3 font-medium">Review</th>
               <th className="px-4 py-3 font-medium">Students</th>
@@ -95,7 +95,10 @@ async function QuestionTable({ searchParams }: { searchParams: PageProps<"/admin
                     <span className="mt-0.5 line-clamp-2 block text-ink">{r.stem_en}</span>
                   </Link>
                 </td>
-                <td className="px-4 py-3 text-ink-soft">{r.topics?.name_en}</td>
+                <td className="px-4 py-3 text-ink-soft">
+                  {r.topics?.name_en}
+                  {r.clinical_topic && <span className="block text-xs text-ink-muted">{r.clinical_topic}</span>}
+                </td>
                 <td className="px-4 py-3 text-ink-soft">{originLabel[r.origin]}</td>
                 <td className="px-4 py-3">
                   <ReviewBadge status={r.review_status} />

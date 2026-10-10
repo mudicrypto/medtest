@@ -86,7 +86,7 @@ export interface ImportState {
   validRows?: number;
   toCreate?: number;
   toUpdate?: number;
-  sample?: Pick<ImportRow, "slug" | "topic" | "origin" | "rights_status" | "review_status">[];
+  sample?: Pick<ImportRow, "slug" | "specialty" | "topic" | "origin" | "rights_status" | "review_status">[];
   created?: number;
   updated?: number;
 }
@@ -130,8 +130,9 @@ export async function importQuestions(_prev: ImportState, formData: FormData): P
     validRows: result.rows.length,
     toCreate: slugs.filter((s) => !existing.has(s)).length,
     toUpdate: slugs.filter((s) => existing.has(s)).length,
-    sample: result.rows.slice(0, 8).map(({ slug, topic, origin, rights_status, review_status }) => ({
+    sample: result.rows.slice(0, 8).map(({ slug, specialty, topic, origin, rights_status, review_status }) => ({
       slug,
+      specialty,
       topic,
       origin,
       rights_status,

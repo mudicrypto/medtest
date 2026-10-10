@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getQuestions, listQuestionRefs } from "@/lib/content/queries";
+import { getQuestions, listQuestionRefs, type QuestionRef } from "@/lib/content/queries";
 import { gradeCardFor, type MockSummary } from "@/lib/progress/server";
 import { gradeFromAnswer, type SrsCard } from "@/lib/srs";
 import { blueprints } from "@/demo/blueprints";
@@ -23,16 +23,23 @@ export async function fetchQuestions(slugs: string[]): Promise<Question[]> {
   return getQuestions(slugList.parse(slugs));
 }
 
-export async function fetchQuestionRefs(topics: string[] = []): Promise<{ id: string; topic: string }[]> {
+export async function fetchQuestionRefs(filter: { specialties?: string[]; topics?: string[] } = {}): Promise<QuestionRef[]> {
   await getCurrentUser();
-  return listQuestionRefs(z.array(z.string().max(60)).max(50).parse(topics));
+  const list = z.array(z.string().max(120)).max(50);
+  return listQuestionRefs({ specialties: list.parse(filter.specialties ?? []), topics: list.parse(filter.topics ?? []) });
 }
 
+/**
+ * Grades one answer on the server. `submissionId` is a random ID chosen once
+ * per submission: sending the same one again (double click, network retry)
+ * returns the original result without recording a second attempt.
+ */
 export async function submitAnswer(
   questionId: string,
   selected: QuestionOption["id"],
   attemptMode: "practice" | "review" = "practice",
-): Promise<GradeResult & { card: SrsCard }> {
+  submissionId?: string,
+): Promise<GradeResult & { card: SrsCard; duplicate: boolean }> {
   const user = await getCurrentUser();
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -40,19 +47,25 @@ export async function submitAnswer(
       p_slug: slug.parse(questionId),
       p_selected: position.parse(selected),
       p_mode: mode.parse(attemptMode),
+      p_client_id: submissionId ? z.uuid().parse(submissionId) : undefined,
     })
     .single();
   if (error || !data) throw new Error("We couldn't check that answer. Please try again.");
-  // Reschedule this question in the student's review queue.
-  const card = await gradeCardFor(supabase, user.id, "question", questionId, gradeFromAnswer(data.is_correct));
+  // Reschedule this question in the student's review queue (once per submission).
+  const card = data.duplicate
+    ? await gradeCardFor(supabase, user.id, "question", questionId, null)
+    : await gradeCardFor(supabase, user.id, "question", questionId, gradeFromAnswer(data.is_correct));
   return {
     card,
+    duplicate: data.duplicate,
     correct: data.is_correct,
-    topic: data.topic,
+    specialty: data.topic,
     key: {
       correct: data.correct as QuestionOption["id"],
       explanationEn: data.explanation_en,
       explanationRu: data.explanation_ru,
+      optionExplanations: (data.option_explanations ?? {}) as Partial<Record<QuestionOption["id"], string>>,
+      examPearl: data.exam_pearl,
       tutorHint: data.tutor_hint ?? "",
     },
   };
@@ -73,7 +86,7 @@ export async function startMock(count: number): Promise<Question[]> {
 
 export interface MockGrade {
   questionId: string;
-  topic: string;
+  specialty: string;
   selected: QuestionOption["id"] | null;
   correct: QuestionOption["id"];
   isCorrect: boolean;
@@ -109,7 +122,7 @@ export async function submitMock(
     .filter((r) => !!r)
     .map((r) => ({
       questionId: r.slug,
-      topic: r.topic,
+      specialty: r.topic,
       selected: (r.selected as QuestionOption["id"] | null) ?? null,
       correct: r.correct as QuestionOption["id"],
       isCorrect: r.is_correct,

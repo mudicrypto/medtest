@@ -52,7 +52,7 @@ export async function listQuestionsForStaff(f: AdminQuestionFilters) {
   const supabase = await createClient();
   let q = supabase
     .from("questions")
-    .select("slug, topic, stem_en, origin, rights_status, review_status, updated_at, topics(name_en)")
+    .select("slug, topic, clinical_topic, stem_en, origin, rights_status, review_status, updated_at, topics(name_en)")
     .order("updated_at", { ascending: false })
     .limit(200);
   if (f.status && REVIEW_STATUSES.includes(f.status as ReviewStatus)) q = q.eq("review_status", f.status as ReviewStatus);
@@ -73,7 +73,7 @@ export async function getQuestionForStaff(slug: string) {
   const { data } = await supabase
     .from("questions")
     .select(
-      "*, topics(name_en), question_options(position, text_en, text_ru), question_keys(correct, explanation_en, explanation_ru, tutor_hint), content_sources(title, publisher, rights_status, permission_evidence), reviewer:profiles!questions_reviewed_by_fkey(display_name)",
+      "*, topics(name_en), question_options(position, text_en, text_ru), question_keys(correct, explanation_en, explanation_ru, tutor_hint, option_explanations, exam_pearl), content_sources(title, publisher, rights_status, permission_evidence), reviewer:profiles!questions_reviewed_by_fkey(display_name)",
     )
     .eq("slug", slug)
     .maybeSingle();
