@@ -41,8 +41,8 @@ export function TopicBars({ stats }: { stats: TopicStat[] }) {
         ))}
       </ul>
       <DataTable
-        caption="Accuracy by specialty"
-        head={["Specialty", "Answered", "Correct", "Accuracy"]}
+        caption="Accuracy by topic"
+        head={["Topic", "Answered", "Correct", "Accuracy"]}
         rows={stats.map((s) => [s.name, s.answered, s.correct, s.accuracy === null ? "—" : `${s.accuracy}%`])}
       />
     </figure>

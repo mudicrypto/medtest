@@ -33,14 +33,6 @@ export default function ImportPage() {
           <li>In Excel use <strong>File → Save As → CSV UTF-8</strong> so Russian text is kept.</li>
           <li>One row per question. <code>correct</code> is A, B, C or D.</li>
           <li>
-            Classify each question: <code>specialty</code> (e.g. cardiology), <code>subject</code>, <code>topic</code> and,
-            optionally, <code>subtopic</code>.
-          </li>
-          <li>
-            <code>why_a</code>–<code>why_d</code> explain why each wrong option is wrong; <code>exam_pearl</code> is one
-            high-yield takeaway. Both are shown only after answering.
-          </li>
-          <li>
             <code>key_terms</code>: <code>русский = English; русский = English</code>
           </li>
           <li>

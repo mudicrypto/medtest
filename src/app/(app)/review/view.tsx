@@ -6,7 +6,7 @@ import { useProgress } from "@/lib/progress-store";
 import { isDue } from "@/lib/srs";
 import { terms } from "@/demo/terms";
 import { useQuestions } from "@/lib/use-questions";
-import { PracticeQuestion } from "@/components/question-card";
+import { QuestionCard } from "@/components/question-card";
 import { TermFlashcard } from "@/components/flashcard";
 import { Button, ButtonLink, EmptyState, PageHeader, ProgressBar, Skeleton } from "@/components/ui";
 
@@ -98,16 +98,14 @@ function ReviewQueue({
         </span>
       </div>
       {isQuestion ? (
-        <PracticeQuestion
+        <QuestionCard
           key={id}
           question={questionById.get(id.slice(2))!}
           mode="review"
-          footer={(answered) =>
-            answered && (
-              <Button onClick={next} autoFocus>
-                Continue <ArrowRight className="size-4" aria-hidden />
-              </Button>
-            )
+          footer={
+            <Button onClick={next} autoFocus>
+              Continue <ArrowRight className="size-4" aria-hidden />
+            </Button>
           }
         />
       ) : (

@@ -7,10 +7,7 @@ export async function GET() {
   const csv = toCsv([
     {
       slug: "card-0001",
-      specialty: "cardiology",
-      subject: "Ischaemic heart disease",
-      topic: "Acute coronary syndrome",
-      subtopic: "ECG localisation",
+      topic: "cardiology",
       difficulty: "2",
       stem_en: "A 58-year-old man has ST elevation in leads II, III and aVF. Occlusion of which artery is most likely?",
       stem_ru: "У мужчины 58 лет подъём сегмента ST в отведениях II, III, aVF. Окклюзия какой артерии наиболее вероятна?",
@@ -25,11 +22,6 @@ export async function GET() {
       correct: "B",
       explanation_en: "Inferior leads reflect the inferior wall, usually supplied by the right coronary artery.",
       explanation_ru: "",
-      why_a: "LAD occlusion causes anterior changes (V1–V4).",
-      why_b: "",
-      why_c: "The circumflex causes lateral changes; inferior only in left-dominant circulation.",
-      why_d: "Left main occlusion causes widespread ST depression with ST elevation in aVR.",
-      exam_pearl: "In inferior STEMI record V4R: right-ventricular infarction makes patients preload-dependent.",
       tutor_hint: "Think of which wall each lead group looks at.",
       key_terms: "подъём сегмента ST = ST-segment elevation; нижняя стенка = inferior wall",
       origin: "original_practice",

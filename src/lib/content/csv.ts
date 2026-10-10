@@ -4,14 +4,10 @@
 
 import Papa from "papaparse";
 import { z } from "zod";
-import type { QuestionRecord } from "./model";
 
 export const CSV_COLUMNS = [
   "slug",
-  "specialty",
-  "subject",
   "topic",
-  "subtopic",
   "difficulty",
   "stem_en",
   "stem_ru",
@@ -26,11 +22,6 @@ export const CSV_COLUMNS = [
   "correct",
   "explanation_en",
   "explanation_ru",
-  "why_a",
-  "why_b",
-  "why_c",
-  "why_d",
-  "exam_pearl",
   "tutor_hint",
   "key_terms",
   "origin",
@@ -50,12 +41,7 @@ const POSITIONS = ["A", "B", "C", "D"] as const;
 /** The shape the database's import_questions() function expects. */
 export interface ImportRow {
   slug: string;
-  /** Specialty slug, e.g. "cardiology" (stored in questions.topic). */
-  specialty: string;
-  subject: string;
-  /** Clinical topic within the subject, e.g. "Acute coronary syndrome". */
   topic: string;
-  subtopic: string | null;
   difficulty: 1 | 2 | 3;
   stem_en: string;
   stem_ru: string | null;
@@ -66,15 +52,7 @@ export interface ImportRow {
   source_ref: string | null;
   review_note: string | null;
   options: { position: (typeof POSITIONS)[number]; text_en: string; text_ru: string | null }[];
-  key: {
-    correct: (typeof POSITIONS)[number];
-    explanation_en: string;
-    explanation_ru: string | null;
-    /** Why each option is right or wrong; normally one per incorrect option. */
-    option_explanations: Partial<Record<(typeof POSITIONS)[number], string>>;
-    exam_pearl: string | null;
-    tutor_hint: string | null;
-  };
+  key: { correct: (typeof POSITIONS)[number]; explanation_en: string; explanation_ru: string | null; tutor_hint: string | null };
 }
 
 const text = (min: number, max: number, label: string) =>
@@ -112,7 +90,7 @@ function parseTerms(raw: string, ctx: z.RefinementCtx) {
   return out;
 }
 
-function rowSchema(specialties: string[]) {
+function rowSchema(topics: string[]) {
   return z
     .object({
       slug: z
@@ -120,14 +98,11 @@ function rowSchema(specialties: string[]) {
         .trim()
         .toLowerCase()
         .regex(/^[a-z0-9][a-z0-9-]{1,79}$/, { error: "slug must be 2–80 characters: lowercase letters, numbers and hyphens" }),
-      specialty: z
+      topic: z
         .string()
         .trim()
         .toLowerCase()
-        .refine((t) => specialties.includes(t), { error: `specialty must be one of: ${specialties.join(", ")}` }),
-      subject: text(1, 120, "subject"),
-      topic: text(1, 120, "topic"),
-      subtopic: optional(120, "subtopic"),
+        .refine((t) => topics.includes(t), { error: `topic must be one of: ${topics.join(", ")}` }),
       difficulty: z
         .string()
         .trim()
@@ -151,11 +126,6 @@ function rowSchema(specialties: string[]) {
         .pipe(z.enum(POSITIONS, { error: "correct must be A, B, C or D" })),
       explanation_en: text(1, 8000, "explanation_en"),
       explanation_ru: optional(8000, "explanation_ru"),
-      why_a: optional(2000, "why_a"),
-      why_b: optional(2000, "why_b"),
-      why_c: optional(2000, "why_c"),
-      why_d: optional(2000, "why_d"),
-      exam_pearl: optional(2000, "exam_pearl"),
       tutor_hint: optional(2000, "tutor_hint"),
       key_terms: z.string().transform(parseTerms),
       origin: oneOf(ORIGINS, "origin"),
@@ -167,10 +137,7 @@ function rowSchema(specialties: string[]) {
     .transform(
       (r): ImportRow => ({
         slug: r.slug,
-        specialty: r.specialty,
-        subject: r.subject,
         topic: r.topic,
-        subtopic: r.subtopic,
         difficulty: r.difficulty,
         stem_en: r.stem_en,
         stem_ru: r.stem_ru,
@@ -184,19 +151,7 @@ function rowSchema(specialties: string[]) {
           const k = p.toLowerCase() as "a" | "b" | "c" | "d";
           return { position: p, text_en: r[`option_${k}_en`], text_ru: r[`option_${k}_ru`] };
         }),
-        key: {
-          correct: r.correct,
-          explanation_en: r.explanation_en,
-          explanation_ru: r.explanation_ru,
-          option_explanations: Object.fromEntries(
-            POSITIONS.flatMap((p) => {
-              const why = r[`why_${p.toLowerCase() as "a" | "b" | "c" | "d"}`];
-              return why ? [[p, why]] : [];
-            }),
-          ),
-          exam_pearl: r.exam_pearl,
-          tutor_hint: r.tutor_hint,
-        },
+        key: { correct: r.correct, explanation_en: r.explanation_en, explanation_ru: r.explanation_ru, tutor_hint: r.tutor_hint },
       }),
     );
 }
@@ -215,7 +170,7 @@ export interface ParseResult {
   fileErrors: string[];
 }
 
-export function parseQuestionsCsv(csv: string, specialties: string[]): ParseResult {
+export function parseQuestionsCsv(csv: string, topics: string[]): ParseResult {
   const parsed = Papa.parse<Record<string, string>>(csv.replace(/^﻿/, ""), {
     header: true,
     skipEmptyLines: "greedy",
@@ -230,7 +185,7 @@ export function parseQuestionsCsv(csv: string, specialties: string[]): ParseResu
   if (!parsed.data.length) fileErrors.push("The file has no question rows.");
   if (fileErrors.length) return { rows: [], errors: [], fileErrors };
 
-  const schema = rowSchema(specialties);
+  const schema = rowSchema(topics);
   const rows: ImportRow[] = [];
   const errors: RowError[] = [];
   const seen = new Map<string, number>();
@@ -258,42 +213,4 @@ export function toCsv(records: Partial<CsvRecord>[]): string {
     records.map((r) => Object.fromEntries(CSV_COLUMNS.map((c) => [c, r[c] ?? ""]))),
     { columns: [...CSV_COLUMNS], newline: "\n" },
   );
-}
-
-/** A full QuestionRecord → one spreadsheet row. */
-export function recordToCsv(r: QuestionRecord): CsvRecord {
-  const opt = (i: number) => r.options[i];
-  return {
-    slug: r.id,
-    specialty: r.specialty,
-    subject: r.subject,
-    topic: r.topic,
-    subtopic: r.subtopic ?? "",
-    difficulty: String(r.difficulty),
-    stem_en: r.stemEn,
-    stem_ru: r.stemRu ?? "",
-    option_a_en: opt(0).textEn,
-    option_a_ru: opt(0).textRu ?? "",
-    option_b_en: opt(1).textEn,
-    option_b_ru: opt(1).textRu ?? "",
-    option_c_en: opt(2).textEn,
-    option_c_ru: opt(2).textRu ?? "",
-    option_d_en: opt(3).textEn,
-    option_d_ru: opt(3).textRu ?? "",
-    correct: r.correct,
-    explanation_en: r.explanationEn,
-    explanation_ru: r.explanationRu ?? "",
-    why_a: r.optionExplanations.A ?? "",
-    why_b: r.optionExplanations.B ?? "",
-    why_c: r.optionExplanations.C ?? "",
-    why_d: r.optionExplanations.D ?? "",
-    exam_pearl: r.examPearl ?? "",
-    tutor_hint: r.tutorHint ?? "",
-    key_terms: r.keyTerms.map((t) => `${t.ru} = ${t.en}`).join("; "),
-    origin: r.origin,
-    rights_status: r.rightsStatus,
-    review_status: r.reviewStatus,
-    source_ref: r.sourceRef ?? "",
-    review_note: r.reviewNote ?? "",
-  };
 }

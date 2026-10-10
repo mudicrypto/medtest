@@ -65,7 +65,7 @@ export async function loadSnapshot(supabase: Client, userId: string): Promise<Pr
       .reverse()
       .map((a) => ({
         questionId: a.questions!.slug,
-        specialty: a.questions!.topic,
+        topic: a.questions!.topic,
         selected: (a.selected ?? "A") as Attempt["selected"],
         correct: a.is_correct,
         at: Date.parse(a.answered_at),
@@ -88,14 +88,7 @@ export async function loadSnapshot(supabase: Client, userId: string): Promise<Pr
 }
 
 /** Applies a grade to one card (creating it if new) and saves it. Returns the new card. */
-export async function gradeCardFor(
-  supabase: Client,
-  userId: string,
-  type: CardType,
-  itemId: string,
-  /** null = just return the current card (e.g. for a duplicate submission). */
-  grade: Grade | null,
-): Promise<SrsCard> {
+export async function gradeCardFor(supabase: Client, userId: string, type: CardType, itemId: string, grade: Grade): Promise<SrsCard> {
   const { data: existing } = await supabase
     .from("srs_cards")
     .select("item_type, item_id, due, interval_days, ease, reps, lapses")
@@ -104,7 +97,6 @@ export async function gradeCardFor(
     .eq("item_id", itemId)
     .maybeSingle();
   const now = Date.now();
-  if (grade === null) return existing ? toCard(existing) : newCard(now);
   const next = schedule(existing ? toCard(existing) : newCard(now), grade, now);
   const { error } = await supabase.from("srs_cards").upsert({
     user_id: userId,

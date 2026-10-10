@@ -7,15 +7,11 @@ import { createClient } from "@/lib/supabase/server";
 // questions, and these queries never touch question_keys.
 
 const QUESTION_FIELDS =
-  "slug, topic, subject, clinical_topic, subtopic, stem_en, stem_ru, difficulty, key_terms, origin, rights_status, review_status, source_ref, topics(name_en), question_options(position, text_en, text_ru)";
+  "slug, topic, stem_en, stem_ru, difficulty, key_terms, origin, rights_status, review_status, source_ref, topics(name_en), question_options(position, text_en, text_ru)";
 
 type Row = {
   slug: string;
-  /** Specialty slug (the column keeps its original name). */
   topic: string;
-  subject: string;
-  clinical_topic: string;
-  subtopic: string | null;
   stem_en: string;
   stem_ru: string | null;
   difficulty: number;
@@ -32,11 +28,8 @@ function toQuestion(r: Row): Question {
   const showRu = r.rights_status !== "not_cleared";
   return {
     id: r.slug,
-    specialty: r.topic,
-    specialtyName: r.topics?.name_en ?? r.topic,
-    subject: r.subject,
-    topic: r.clinical_topic,
-    subtopic: r.subtopic ?? undefined,
+    topic: r.topic,
+    topicName: r.topics?.name_en ?? r.topic,
     stemEn: r.stem_en,
     stemRu: showRu ? (r.stem_ru ?? undefined) : undefined,
     difficulty: (r.difficulty as 1 | 2 | 3) ?? 2,
@@ -71,20 +64,13 @@ export async function listTopicsWithCounts(): Promise<TopicWithCount[]> {
   }));
 }
 
-export interface QuestionRef {
-  id: string;
-  specialty: string;
-  topic: string;
-}
-
-/** Lightweight list of available questions, for building sessions and filters. */
-export async function listQuestionRefs(filter: { specialties?: string[]; topics?: string[] } = {}): Promise<QuestionRef[]> {
+/** Lightweight list of available questions, for building sessions. */
+export async function listQuestionRefs(topics?: string[]): Promise<{ id: string; topic: string }[]> {
   const supabase = await createClient();
-  let q = supabase.from("questions").select("slug, topic, clinical_topic").order("slug");
-  if (filter.specialties?.length) q = q.in("topic", filter.specialties);
-  if (filter.topics?.length) q = q.in("clinical_topic", filter.topics);
+  let q = supabase.from("questions").select("slug, topic").order("slug");
+  if (topics?.length) q = q.in("topic", topics);
   const { data } = await q;
-  return (data ?? []).map((r) => ({ id: r.slug, specialty: r.topic, topic: r.clinical_topic }));
+  return (data ?? []).map((r) => ({ id: r.slug, topic: r.topic }));
 }
 
 /** Full questions (without keys), returned in the order requested. */

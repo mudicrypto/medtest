@@ -51,12 +51,12 @@ local URL and publishable key printed by `pnpm db:start` into `.env.local`.
 |---|---|
 | `pnpm lint` | Looks for common code mistakes |
 | `pnpm typecheck` | Checks TypeScript types |
-| `pnpm test` | Unit tests: practice engine (answering, duplicate protection, scoring, navigation, restarts), scheduling, analytics, CSV validation, demo bank integrity |
+| `pnpm test` | Unit tests: scheduling, analytics, demo content integrity |
 | `pnpm test:db` | Database security tests: profiles, question visibility, answer keys, grading, import, private progress (needs `pnpm db:start`) |
 | `pnpm build` | Production build, which fails if anything is broken |
 | `pnpm test:e2e` | Clicks through the built app in a real browser, including sign-up via the test inbox (needs `pnpm db:start` and `pnpm build`) |
 | `pnpm db:types` | Regenerates `src/lib/supabase/database.types.ts` from the local database |
-| `pnpm content:build` | Validates `content/demo-bank.ts` and rebuilds `content/demo-questions.csv` and `supabase/seed.sql` |
+| `pnpm content:seed` | Rebuilds `supabase/seed.sql` (local demo data) from `content/demo-questions.csv` |
 
 ## Where things are
 
@@ -70,8 +70,7 @@ local URL and publishable key printed by `pnpm db:start` into `.env.local`.
 - `src/app/(app)/admin/` holds the content admin: import, question review, sources.
 - `src/app/(app)/question-actions.ts` holds the server functions students call to load questions and submit answers.
 - `src/lib/content/` holds the CSV format and validation, plus question queries.
-- `content/demo-bank.ts` holds the 20 illustrative demo questions, written in the typed model (`src/lib/content/model.ts`); `pnpm content:build` turns them into `content/demo-questions.csv` (also a worked example of the CSV format) and local seed data.
-- `src/lib/practice/engine.ts` is the practice-session engine (selection, submission, navigation, scoring, restarts), pure logic with its own unit tests; `use-practice-session.ts` connects it to the server.
+- `content/demo-questions.csv` holds the 18 demo questions (also a worked example of the CSV format).
 - `src/lib/progress-store.tsx` holds the student's progress in the browser while they use the app; every change is saved through `src/app/(app)/progress-actions.ts`.
 - `src/demo/` holds **demo-only** terms and mock exam formats.
 - `tests/` holds unit tests, database security tests and browser tests.

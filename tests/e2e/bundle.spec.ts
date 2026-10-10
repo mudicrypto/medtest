@@ -12,14 +12,7 @@ function files(dir: string): string[] {
 }
 
 test("no answer-key text in browser code", () => {
-  // Text that exists only in answer keys: explanations, per-option notes, exam pearls.
-  const keyOnlyPhrases = [
-    "preload-dependent, so avoid nitrates",
-    "LAD occlusion causes anterior ST elevation",
-    "Never delay steroids in suspected adrenal crisis",
-    "An effusion is an exudate if ANY of these is true",
-    "ophthalmic division of the trigeminal",
-  ];
+  const keyOnlyPhrases = ["Courvoisier's law", "Light's criteria classify", "ophthalmic division of the trigeminal", "Fluids first, then insulin"];
   const offenders: string[] = [];
   for (const f of files(".next/static")) {
     const text = readFileSync(f, "utf8");

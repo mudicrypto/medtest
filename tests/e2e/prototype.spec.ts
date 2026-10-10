@@ -44,7 +44,7 @@ test("practice flow: answer, see explanation, bookmark, finish", async ({ page }
   await page.getByRole("button", { name: "Start practice" }).click();
 
   await expect(page).toHaveURL(/practice\/session/);
-  await expect(page.getByRole("main").getByText("Illustrative demo · unreviewed")).toBeVisible();
+  await expect(page.getByText("DEMO — not for study").first()).toBeVisible();
   const check = page.getByRole("button", { name: "Check answer" });
   await expect(check).toBeDisabled();
   await page.locator("label", { hasText: /^B/ }).first().click();
@@ -55,12 +55,11 @@ test("practice flow: answer, see explanation, bookmark, finish", async ({ page }
   await page.getByRole("button", { name: "Bookmark question" }).click();
   await expect(page.getByRole("button", { name: "Remove bookmark" })).toBeVisible();
 
-  // Four cardiology questions exist; answer one more by keyboard, then end early.
+  // Two cardiology demo questions exist, so the session has two.
   await page.getByRole("button", { name: "Next question" }).click();
   await page.keyboard.press("1");
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("main").getByRole("heading", { name: "Explanation" })).toBeVisible();
-  await page.getByRole("button", { name: "End & see results" }).click();
+  await page.getByRole("button", { name: "Finish" }).click();
   await expect(page.getByText("Session complete")).toBeVisible();
 });
 
@@ -108,7 +107,7 @@ test("bookmarks are saved to the account", async ({ page }) => {
   const links = page.locator("main a[href^='/questions/']");
   await expect(links.first()).toBeVisible();
   const before = await links.count();
-  await page.goto("/questions/q-em-04");
+  await page.goto("/questions/q-ped-02");
   await page.getByRole("main").getByRole("button", { name: "Bookmark question" }).click();
   await expect(page.getByRole("main").getByRole("button", { name: "Remove bookmark" })).toBeVisible();
   await page.waitForTimeout(300);

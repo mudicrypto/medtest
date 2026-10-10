@@ -19,7 +19,7 @@ export function QuestionList({ ids, meta }: { ids: string[]; meta?: (id: string)
           <Link key={q.id} href={`/questions/${q.id}`} className="group flex items-center gap-4 px-5 py-4 hover:bg-sunken/50 sm:px-6">
             <div className="min-w-0 flex-1">
               <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                <Badge>{q.specialtyName}</Badge>
+                <Badge>{q.topicName}</Badge>
                 {meta?.(q.id)}
               </div>
               <p className="line-clamp-2 text-[0.95rem] leading-snug text-ink">{q.stemEn}</p>

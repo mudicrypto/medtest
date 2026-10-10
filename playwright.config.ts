@@ -19,17 +19,17 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "laptop",
-      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec|practice\.spec)\.ts/,
+      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec)\.ts/,
       dependencies: ["setup"],
       use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 860 }, storageState: "playwright/.auth/student-laptop.json" },
     },
     {
       name: "phone",
-      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec|practice\.spec)\.ts/,
+      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec)\.ts/,
       dependencies: ["setup"],
       use: { ...devices["Pixel 7"], storageState: "playwright/.auth/student-phone.json" },
     },
     // Account flows start signed out.
-    { name: "auth", testMatch: /(auth|admin|bundle|progress|practice)\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
+    { name: "auth", testMatch: /(auth|admin|bundle|progress)\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
   ],
 });

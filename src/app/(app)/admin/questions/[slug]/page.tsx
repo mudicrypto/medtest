@@ -30,8 +30,6 @@ async function Detail({ params }: { params: PageProps<"/admin/questions/[slug]">
   const key = Array.isArray(q.question_keys) ? q.question_keys[0] : q.question_keys;
   const options = [...q.question_options].sort((a, b) => a.position.localeCompare(b.position));
   const terms = Array.isArray(q.key_terms) ? (q.key_terms as { ru: string; en: string }[]) : [];
-  const why = (key?.option_explanations ?? {}) as Record<string, string>;
-  const classification = [q.subject, q.clinical_topic, q.subtopic].filter(Boolean).join(" › ");
 
   return (
     <>
@@ -47,7 +45,6 @@ async function Detail({ params }: { params: PageProps<"/admin/questions/[slug]">
       />
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="p-6">
-          {classification && <p className="mb-3 text-xs text-ink-muted">{classification}</p>}
           <p className="font-serif text-lg leading-relaxed text-ink">{q.stem_en}</p>
           {q.stem_ru && (
             <p lang="ru" className="mt-3 border-l-2 border-accent-line pl-3 font-serif text-ink-muted">
@@ -70,7 +67,6 @@ async function Detail({ params }: { params: PageProps<"/admin/questions/[slug]">
                         {o.text_ru}
                       </span>
                     )}
-                    {why[o.position] && <span className="mt-1 block text-sm text-ink-muted">Why: {why[o.position]}</span>}
                   </span>
                   {correct && <CircleCheck className="ml-auto size-5 shrink-0 text-success" aria-label="Correct answer" />}
                 </li>
@@ -83,12 +79,6 @@ async function Detail({ params }: { params: PageProps<"/admin/questions/[slug]">
             <p lang="ru" className="mt-2 font-serif leading-relaxed text-ink-muted">
               {key.explanation_ru}
             </p>
-          )}
-          {key?.exam_pearl && (
-            <>
-              <h2 className="mt-5 text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Exam pearl</h2>
-              <p className="mt-1.5 text-sm text-ink-soft">{key.exam_pearl}</p>
-            </>
           )}
           {key?.tutor_hint && (
             <>

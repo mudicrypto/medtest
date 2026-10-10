@@ -63,10 +63,7 @@ question. Columns:
 | Column | Required | Notes |
 |---|---|---|
 | `slug` | yes | Your ID for the question, unique and permanent. Lowercase letters, numbers, hyphens, e.g. `card-0001`. Re-importing the same slug **updates** that question. |
-| `specialty` | yes | One of: cardiology, pulmonology, gastroenterology, endocrinology, infectious-diseases, neurology, obstetrics, pediatrics, surgery, emergency-medicine |
-| `subject` | yes | Area within the specialty, e.g. "Arrhythmias" |
-| `topic` | yes | e.g. "Supraventricular tachycardia". Students can filter practice by topic. |
-| `subtopic` | no | e.g. "Acute management" |
+| `topic` | yes | One of: cardiology, pulmonology, gastroenterology, endocrinology, infectious-diseases, neurology, obstetrics, pediatrics, surgery |
 | `difficulty` | no | 1, 2 or 3 (default 2) |
 | `stem_en` | yes | The question in English |
 | `stem_ru` | no | Russian original text |
@@ -75,8 +72,6 @@ question. Columns:
 | `correct` | yes | A, B, C or D |
 | `explanation_en` | yes | Why the answer is correct, shown after answering |
 | `explanation_ru` | no | Russian explanation |
-| `why_a` … `why_d` | recommended | Why that option is wrong, shown under each option after answering. Fill in the three incorrect options; the correct one is optional. |
-| `exam_pearl` | recommended | One short, high-yield takeaway, shown after answering |
 | `tutor_hint` | no | Short hint the tutor uses |
 | `key_terms` | no | `русский = English; русский = English` |
 | `origin` | yes | `original_practice`, `official_verified`, `adapted` or `demo` |
@@ -124,10 +119,6 @@ The app records who changed the status and when, plus your optional note.
 
 ## Removing the demo questions
 
-When real content is in, retire the 20 illustrative demo questions: open **Questions**,
+When real content is in, retire the 18 demo questions: open **Questions**,
 filter **Origin → Demo**, and set each to **Retire**. In production, simply
 don't import `content/demo-questions.csv` in the first place.
-
-The demo questions are written in `content/demo-bank.ts` (the typed question
-model). After editing them, run `pnpm content:build` to regenerate the CSV and
-the local seed data.

@@ -95,16 +95,16 @@ export function DashboardView({ greeting, topics }: { greeting: React.ReactNode;
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <h2 className="flex items-center gap-2 font-semibold text-ink">
-              <Target className="size-4 text-accent" aria-hidden /> Focus areas
+              <Target className="size-4 text-accent" aria-hidden /> Focus topics
             </h2>
             <Link href="/analytics" className="text-sm text-accent hover:underline">
-              All specialties
+              All topics
             </Link>
           </div>
-          <p className="mt-1 text-sm text-ink-muted">Your three lowest-scoring specialties.</p>
+          <p className="mt-1 text-sm text-ink-muted">Your three lowest-scoring topics.</p>
           {weakest.length === 0 && (
             <p className="mt-5 rounded-xl bg-sunken p-4 text-sm text-ink-soft">
-              Answer a few questions and your weakest specialties will appear here.{" "}
+              Answer a few questions and your weakest topics will appear here.{" "}
               <Link href="/practice" className="font-medium text-accent hover:underline">
                 Start practising
               </Link>
@@ -120,7 +120,7 @@ export function DashboardView({ greeting, topics }: { greeting: React.ReactNode;
                   </div>
                   <ProgressBar value={t.accuracy!} label={`${t.name} accuracy`} />
                 </div>
-                <ButtonLink href={`/practice/session?specialties=${t.slug}`} variant="secondary" className="h-8 px-3 text-xs">
+                <ButtonLink href={`/practice/session?topics=${t.slug}`} variant="secondary" className="h-8 px-3 text-xs">
                   Practise
                 </ButtonLink>
               </li>
@@ -131,7 +131,7 @@ export function DashboardView({ greeting, topics }: { greeting: React.ReactNode;
         <div className="grid gap-4 sm:grid-cols-2">
           <QuickLink href="/mock-exams" icon={<Timer className="size-5" />} title="Mock exam" text="Timed, no feedback until you submit." />
           <QuickLink href="/terminology" icon={<Languages className="size-5" />} title="Terminology" text="Russian ↔ English flashcards." />
-          <QuickLink href="/practice" icon={<BookOpen className="size-5" />} title="Question bank" text={`${bankSize} questions in ${topics.filter((t) => t.questionCount > 0).length} specialties.`} />
+          <QuickLink href="/practice" icon={<BookOpen className="size-5" />} title="Question bank" text={`${bankSize} questions in ${topics.filter((t) => t.questionCount > 0).length} topics.`} />
           <QuickLink href="/tutor" icon={<Sparkles className="size-5" />} title="AI tutor" text="Ask about a topic or your study plan." />
         </div>
       </section>
