@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Clock, Info, ListChecks, Target } from "lucide-react";
 import { useProgress } from "@/lib/progress-store";
 import { blueprints } from "@/demo/blueprints";
-import { Badge, ButtonLink, Card, PageHeader } from "@/components/ui";
+import { Badge, ButtonLink, Card, PageHeader, Skeleton } from "@/components/ui";
 
 export function MockExamsView() {
   const store = useProgress();
@@ -62,7 +62,10 @@ export function MockExamsView() {
       </div>
 
       <h2 className="mb-3 mt-10 text-sm font-semibold text-ink">Past attempts</h2>
-      {store.ready && store.mocks.length > 0 ? (
+      {/* Until saved progress loads, we don't know yet (an error shows the banner above). */}
+      {!store.ready ? (
+        <Skeleton className="h-24" />
+      ) : store.mocks.length > 0 ? (
         <Card className="divide-y divide-line">
           {store.mocks.map((m) => {
             const b = blueprints.find((x) => x.id === m.blueprintId);

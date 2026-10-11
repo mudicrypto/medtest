@@ -6,7 +6,7 @@ import { useProgress } from "@/lib/progress-store";
 import { isDue } from "@/lib/srs";
 import type { Term } from "@/lib/types";
 import { TermFlashcard } from "@/components/flashcard";
-import { Card, PageHeader, Skeleton, cn } from "@/components/ui";
+import { ButtonLink, Card, PageHeader, Skeleton, cn } from "@/components/ui";
 
 type Tab = "study" | "browse";
 
@@ -79,6 +79,12 @@ function Study({ terms, direction }: { terms: Term[]; direction: "ru-en" | "en-r
             ? `You studied ${queue.length} terms. They'll come back in your daily review when they're due.`
             : "No terms are due. Browse the word list or come back tomorrow."}
         </p>
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
+          <ButtonLink href="/review">Go to daily review</ButtonLink>
+          <ButtonLink href="/dashboard" variant="secondary">
+            Dashboard
+          </ButtonLink>
+        </div>
       </Card>
     );
   }

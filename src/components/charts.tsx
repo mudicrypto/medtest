@@ -101,7 +101,8 @@ export function AccuracyTrend({ days }: { days: DayStat[] }) {
             </g>
           ))}
           {days.map((d, i) =>
-            i % 3 === 0 || i === days.length - 1 ? (
+            // Every third day, counted back from today, so labels never collide.
+            (days.length - 1 - i) % 3 === 0 ? (
               <text key={d.date} x={x(i)} y={H - 6} textAnchor={i === days.length - 1 ? "end" : "middle"} className="fill-ink-muted text-[11px]">
                 {shortDate(d.date)}
               </text>
