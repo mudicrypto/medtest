@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "./ui";
 import { Logo } from "./logo";
+import { TUTOR_ENABLED } from "@/lib/features";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", short: "Home", icon: LayoutDashboard, primary: true },
@@ -29,7 +30,7 @@ const nav = [
   { href: "/review/mistakes", label: "Mistakes", short: "Mistakes", icon: CircleX, primary: false },
   { href: "/bookmarks", label: "Bookmarks", short: "Saved", icon: Bookmark, primary: false },
   { href: "/analytics", label: "Progress", short: "Progress", icon: ChartColumn, primary: true },
-  { href: "/tutor", label: "AI tutor", short: "Tutor", icon: Sparkles, primary: false },
+  ...(TUTOR_ENABLED ? [{ href: "/tutor", label: "AI tutor", short: "Tutor", icon: Sparkles, primary: false }] : []),
 ];
 
 type Variant = "sidebar" | "menu" | "tabs";

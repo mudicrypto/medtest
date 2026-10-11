@@ -8,6 +8,7 @@ import { submitAnswer } from "@/app/(app)/question-actions";
 import { SourceBadge } from "./source-badge";
 import { Badge, Button, Card, cn } from "./ui";
 import { TutorDrawer } from "./tutor";
+import { TUTOR_ENABLED } from "@/lib/features";
 
 type OptionId = QuestionOption["id"];
 
@@ -19,7 +20,8 @@ export function QuestionCard({
 }: {
   question: Question;
   mode: "practice" | "review";
-  onAnswered?: (correct: boolean) => void;
+  /** Called once the server has graded the answer. */
+  onAnswered?: (answer: { selected: OptionId; correct: boolean; key: QuestionKey }) => void;
   /** Rendered after the answer is revealed, e.g. a "Next" button. */
   footer?: React.ReactNode;
 }) {
@@ -43,7 +45,7 @@ export function QuestionCard({
         const r = await submitAnswer(question.id, selected, mode);
         recordAttempt({ questionId: question.id, topic: r.topic, selected, correct: r.correct, mode }, r.card);
         setResult(r);
-        onAnswered?.(r.correct);
+        onAnswered?.({ selected, correct: r.correct, key: r.key });
       } catch {
         setError("We couldn't check your answer. Please try again.");
       }
@@ -215,11 +217,18 @@ export function QuestionCard({
               </>
             )}
 
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <Button variant="secondary" onClick={() => setTutorOpen(true)}>
-                <Sparkles className="size-4 text-accent" aria-hidden />
-                Ask the tutor
-              </Button>
+            <div
+              className={cn(
+                "mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:items-center",
+                TUTOR_ENABLED ? "sm:justify-between" : "sm:justify-end",
+              )}
+            >
+              {TUTOR_ENABLED && (
+                <Button variant="secondary" onClick={() => setTutorOpen(true)}>
+                  <Sparkles className="size-4 text-accent" aria-hidden />
+                  Ask the tutor
+                </Button>
+              )}
               {footer}
             </div>
           </div>

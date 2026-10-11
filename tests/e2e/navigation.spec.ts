@@ -12,7 +12,6 @@ const sections = [
   { label: "Mistakes", short: null, url: /\/review\/mistakes$/, heading: /^Mistakes$/ },
   { label: "Bookmarks", short: null, url: /\/bookmarks$/, heading: /^Bookmarks$/ },
   { label: "Progress", short: "Progress", url: /\/analytics$/, heading: /^Your progress$/ },
-  { label: "AI tutor", short: null, url: /\/tutor$/, heading: /^Ask your tutor$/ },
 ];
 
 const isPhone = () => test.info().project.name === "phone";

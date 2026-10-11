@@ -3,14 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowRight, CircleCheck, CircleX, X } from "lucide-react";
+import { ArrowRight, Info, RotateCcw, X } from "lucide-react";
 import { useProgress } from "@/lib/progress-store";
-import type { Question } from "@/lib/types";
+import type { Question, QuestionKey, QuestionOption } from "@/lib/types";
 import { QUESTIONS_LOAD_ERROR, useQuestions } from "@/lib/use-questions";
 import { fetchQuestionRefs } from "@/app/(app)/question-actions";
+import { AnswerReview } from "@/components/answer-review";
 import { LoadError } from "@/components/load-error";
 import { QuestionCard } from "@/components/question-card";
 import { Button, ButtonLink, Card, ProgressBar, Skeleton } from "@/components/ui";
+
+/** What the student chose for one question, and the key the server returned. */
+type SessionAnswer = { selected: QuestionOption["id"]; correct: boolean; key: QuestionKey };
 
 /**
  * Runs a list of questions one at a time.
@@ -26,7 +30,7 @@ function Session({ params }: { params: URLSearchParams }) {
   const store = useProgress();
   const [ids, setIds] = useState<string[] | null>(null);
   const [index, setIndex] = useState(0);
-  const [results, setResults] = useState<Record<string, boolean>>({});
+  const [answers, setAnswers] = useState<Record<string, SessionAnswer>>({});
 
   const [failed, setFailed] = useState(false);
   // Bumped by "Try again" to re-run the question picker below.
@@ -94,7 +98,7 @@ function Session({ params }: { params: URLSearchParams }) {
   const done = index >= list.length;
   const mode = params.get("mode") === "review" ? "review" : "practice";
 
-  if (done) return <Summary questions={list} results={results} />;
+  if (done) return <Summary questions={list} answers={answers} />;
 
   const q = list[index];
   const isLast = index === list.length - 1;
@@ -121,7 +125,7 @@ function Session({ params }: { params: URLSearchParams }) {
         key={q.id}
         question={q}
         mode={mode}
-        onAnswered={(c) => setResults((r) => ({ ...r, [q.id]: c }))}
+        onAnswered={(a) => setAnswers((prev) => ({ ...prev, [q.id]: a }))}
         footer={
           <Button onClick={() => setIndex((i) => i + 1)} autoFocus>
             {isLast ? "Finish" : "Next question"} <ArrowRight className="size-4" aria-hidden />
@@ -132,27 +136,28 @@ function Session({ params }: { params: URLSearchParams }) {
   );
 }
 
-function Summary({ questions, results }: { questions: Question[]; results: Record<string, boolean> }) {
-  const ids = questions.map((q) => q.id);
-  const correct = ids.filter((id) => results[id]).length;
-  const pct = Math.round((correct / ids.length) * 100);
-  const wrongIds = ids.filter((id) => results[id] === false);
+function Summary({ questions, answers }: { questions: Question[]; answers: Record<string, SessionAnswer> }) {
+  const answered = questions.filter((q) => answers[q.id]);
+  const correct = answered.filter((q) => answers[q.id].correct).length;
+  const pct = answered.length ? Math.round((correct / answered.length) * 100) : 0;
+  const wrongIds = answered.filter((q) => !answers[q.id].correct).map((q) => q.id);
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-3xl">
       <Card className="p-7 text-center sm:p-10">
         <p className="text-sm font-medium text-accent">Session complete</p>
         <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums text-ink">{pct}%</p>
         <p className="mt-2 text-ink-muted">
-          {correct} of {ids.length} correct
+          {correct} of {answered.length} correct
         </p>
         <div className="mt-7 flex flex-col justify-center gap-2 sm:flex-row">
           {wrongIds.length > 0 && (
             <ButtonLink href={`/practice/session?ids=${wrongIds.join(",")}`}>
+              <RotateCcw className="size-4" aria-hidden />
               Retry {wrongIds.length} missed
             </ButtonLink>
           )}
-          <ButtonLink href="/practice" variant="secondary">
+          <ButtonLink href="/practice" variant={wrongIds.length ? "secondary" : "primary"}>
             New session
           </ButtonLink>
           <ButtonLink href="/dashboard" variant="ghost">
@@ -161,24 +166,17 @@ function Summary({ questions, results }: { questions: Question[]; results: Recor
         </div>
       </Card>
 
-      <Card className="mt-4 divide-y divide-line">
-        {questions.map((q, i) => {
-          const ok = results[q.id];
-          return (
-            <Link key={q.id} href={`/questions/${q.id}`} className="flex items-start gap-3 px-5 py-4 hover:bg-sunken/50">
-              {ok ? (
-                <CircleCheck className="mt-0.5 size-5 shrink-0 text-success" aria-label="Correct" />
-              ) : (
-                <CircleX className="mt-0.5 size-5 shrink-0 text-danger" aria-label="Incorrect" />
-              )}
-              <span className="line-clamp-2 text-sm text-ink-soft">
-                <span className="tabular-nums text-ink-muted">{i + 1}. </span>
-                {q.stemEn}
-              </span>
-            </Link>
-          );
-        })}
-      </Card>
+      <h2 className="mb-3 mt-8 flex items-center gap-2 text-sm font-semibold text-ink">
+        <Info className="size-4 text-ink-muted" aria-hidden /> Answer review
+      </h2>
+      <AnswerReview
+        items={answered.map((q) => ({
+          question: q,
+          selected: answers[q.id].selected,
+          correct: answers[q.id].key.correct,
+          explanationEn: answers[q.id].key.explanationEn,
+        }))}
+      />
     </div>
   );
 }

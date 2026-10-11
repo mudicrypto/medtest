@@ -12,7 +12,6 @@ const pages = [
   "/mock-exams/run?b=demo-quick",
   "/terminology",
   "/analytics",
-  "/tutor",
   "/questions/q-card-01",
   "/settings",
 ];
@@ -63,16 +62,17 @@ test("practice flow: answer, see explanation, bookmark, finish", async ({ page }
   await expect(page.getByText("Session complete")).toBeVisible();
 });
 
-test("AI tutor drawer answers with question context", async ({ page }) => {
+test("the scripted AI tutor is hidden until the real one is built", async ({ page }) => {
+  // Switched off in src/lib/features.ts; the code is kept for later.
+  await page.goto("/dashboard");
+  await expect(page.getByRole("link", { name: /AI tutor/ })).toHaveCount(0);
   await page.goto("/questions/q-neuro-02");
   await page.locator("label", { hasText: "Right middle cerebral artery" }).click();
   await page.getByRole("button", { name: "Check answer" }).click();
-  await page.getByRole("button", { name: "Ask the tutor" }).click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "Why is my answer wrong?" }).click();
-  await expect(dialog.getByText(/You chose A .* The key answer is B/)).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(dialog).toBeHidden();
+  await expect(page.getByRole("heading", { name: "Explanation" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ask the tutor" })).toHaveCount(0);
+  await page.goto("/tutor");
+  await expect(page.getByRole("main").getByRole("heading", { name: "Page not found" })).toBeVisible();
 });
 
 test("mock exam: answer, submit, see demo-labelled results", async ({ page }) => {

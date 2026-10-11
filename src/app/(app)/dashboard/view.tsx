@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookOpen, Flame, Languages, RotateCcw, Sparkles, Target, Timer } from "lucide-react";
+import { ArrowRight, BookOpen, ChartColumn, Flame, Languages, RotateCcw, Sparkles, Target, Timer } from "lucide-react";
 import { useProgress } from "@/lib/progress-store";
 import { dailyStats, openMistakes, overallAccuracy, streakDays, topicStats } from "@/lib/analytics";
 import { isDue } from "@/lib/srs";
 import type { TopicWithCount } from "@/lib/types";
 import { ButtonLink, Card, PageHeader, ProgressBar, Skeleton, StatTile } from "@/components/ui";
 import { VolumeColumns } from "@/components/charts";
+import { TUTOR_ENABLED } from "@/lib/features";
 
 export function DashboardView({ greeting, topics }: { greeting: React.ReactNode; topics: TopicWithCount[] }) {
   const s = useProgress();
@@ -132,7 +133,11 @@ export function DashboardView({ greeting, topics }: { greeting: React.ReactNode;
           <QuickLink href="/mock-exams" icon={<Timer className="size-5" />} title="Mock exam" text="Timed, no feedback until you submit." />
           <QuickLink href="/terminology" icon={<Languages className="size-5" />} title="Terminology" text="Russian ↔ English flashcards." />
           <QuickLink href="/practice" icon={<BookOpen className="size-5" />} title="Question bank" text={`${bankSize} questions in ${topics.filter((t) => t.questionCount > 0).length} topics.`} />
-          <QuickLink href="/tutor" icon={<Sparkles className="size-5" />} title="AI tutor" text="Ask about a topic or your study plan." />
+          {TUTOR_ENABLED ? (
+            <QuickLink href="/tutor" icon={<Sparkles className="size-5" />} title="AI tutor" text="Ask about a topic or your study plan." />
+          ) : (
+            <QuickLink href="/analytics" icon={<ChartColumn className="size-5" />} title="Progress" text="Your weakest topics and weekly accuracy." />
+          )}
         </div>
       </section>
     </>

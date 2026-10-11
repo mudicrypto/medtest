@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   BadgeCheck,
+  Bookmark,
   BookOpen,
   ChartColumn,
   FileText,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { Badge, ButtonLink, Card } from "@/components/ui";
+import { TUTOR_ENABLED } from "@/lib/features";
 
 const features = [
   { icon: BookOpen, title: "Topic-based question bank", text: "Four-option questions in English, organised by specialty, with clear explanations." },
@@ -21,7 +23,9 @@ const features = [
   { icon: RotateCcw, title: "Personal spaced repetition", text: "Missed questions and new terms return exactly when you need to see them again." },
   { icon: Timer, title: "Timed mock exams", text: "Practise under exam conditions, then review every answer by topic." },
   { icon: ChartColumn, title: "Progress you can act on", text: "See your weakest topics and how your accuracy changes week to week." },
-  { icon: Sparkles, title: "Context-aware AI tutor", text: "Ask why an answer is right, get memory hooks, and practise terminology." },
+  TUTOR_ENABLED
+    ? { icon: Sparkles, title: "Context-aware AI tutor", text: "Ask why an answer is right, get memory hooks, and practise terminology." }
+    : { icon: Bookmark, title: "Bookmarks and mistakes", text: "Save questions to revisit, and retry every question you got wrong." },
 ];
 
 const labels = [

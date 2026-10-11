@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, CircleCheck, CircleX, Clock, Flag, Info } from "lucide-react";
 import { useProgress, type MockSummary } from "@/lib/progress-store";
 import type { Question, QuestionOption } from "@/lib/types";
 import { blueprints } from "@/demo/blueprints";
 import { startMock, submitMock, type MockGrade } from "@/app/(app)/question-actions";
+import { AnswerReview } from "@/components/answer-review";
 import { LoadError } from "@/components/load-error";
 import { SourceBadge } from "@/components/source-badge";
 import { Badge, Button, ButtonLink, Card, ProgressBar, Skeleton, cn } from "@/components/ui";
@@ -364,47 +364,14 @@ function Results({ result, grades, questions }: { result: MockSummary; grades: M
       <h2 className="mb-3 mt-8 flex items-center gap-2 text-sm font-semibold text-ink">
         <Info className="size-4 text-ink-muted" aria-hidden /> Answer review
       </h2>
-      <Card className="divide-y divide-line">
-        {grades.map((g, i) => {
-          const id = g.questionId;
-          const q = questionById.get(id)!;
-          const key = { correct: g.correct, explanationEn: g.explanationEn };
-          const mine = g.selected;
-          const ok = g.isCorrect;
-          return (
-            <details key={id} className="group px-5 py-4">
-              <summary className="flex cursor-pointer list-none items-start gap-3">
-                {ok ? (
-                  <CircleCheck className="mt-0.5 size-5 shrink-0 text-success" aria-label="Correct" />
-                ) : (
-                  <CircleX className="mt-0.5 size-5 shrink-0 text-danger" aria-label="Incorrect" />
-                )}
-                <span className="line-clamp-2 text-sm text-ink-soft group-open:line-clamp-none">
-                  <span className="tabular-nums text-ink-muted">{i + 1}. </span>
-                  {q.stemEn}
-                </span>
-              </summary>
-              <div className="ml-8 mt-3 space-y-2 text-sm">
-                <p className="text-ink-muted">
-                  Your answer:{" "}
-                  <span className={ok ? "text-success" : "text-danger"}>
-                    {mine ? `${mine} — ${q.options.find((o) => o.id === mine)?.textEn}` : "not answered"}
-                  </span>
-                </p>
-                {!ok && (
-                  <p className="text-ink-muted">
-                    Correct: <span className="text-success">{key.correct} — {q.options.find((o) => o.id === key.correct)?.textEn}</span>
-                  </p>
-                )}
-                <p className="font-serif leading-relaxed text-ink-soft">{key.explanationEn}</p>
-                <Link href={`/questions/${id}`} className="inline-block text-accent hover:underline">
-                  Open question
-                </Link>
-              </div>
-            </details>
-          );
-        })}
-      </Card>
+      <AnswerReview
+        items={grades.map((g) => ({
+          question: questionById.get(g.questionId)!,
+          selected: g.selected,
+          correct: g.correct,
+          explanationEn: g.explanationEn,
+        }))}
+      />
     </div>
   );
 }
