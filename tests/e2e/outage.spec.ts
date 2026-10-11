@@ -142,3 +142,20 @@ test("a hung database gives up within seconds instead of leaving students waitin
   await errorPage(page).getByRole("button", { name: "Try again" }).click();
   await expect(main(page).getByRole("button", { name: /Cardiology/ })).toBeVisible();
 });
+
+test("progress that failed to load is fetched again when the connection returns", async ({ page, context }) => {
+  await signIn(page);
+  stopDatabase();
+  await page.goto("/bookmarks");
+  const progressError = main(page).getByRole("alert").filter({ hasText: "We couldn't load your progress" });
+  await expect(progressError).toBeVisible({ timeout: 20_000 });
+
+  await startDatabase();
+  // The device drops off and back on the network (e.g. Wi-Fi reconnecting).
+  await context.setOffline(true);
+  await expect(main(page).getByText("You're offline")).toBeVisible();
+  await context.setOffline(false);
+
+  await expect(progressError).toHaveCount(0, { timeout: 15_000 });
+  await expect(main(page).getByRole("heading", { name: "Bookmarks", level: 1 })).toBeVisible();
+});

@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Languages } from "lucide-react";
+import { ArrowRight, BookOpen, Check, Languages } from "lucide-react";
 import { useProgress } from "@/lib/progress-store";
 import { topicStats } from "@/lib/analytics";
 import type { TopicWithCount } from "@/lib/types";
-import { Button, Card, cn } from "@/components/ui";
+import { Button, Card, EmptyState, cn } from "@/components/ui";
 
 const sizes = [5, 10, 20] as const;
 
@@ -29,6 +29,15 @@ export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
     const params = new URLSearchParams({ n: String(size) });
     if (picked.length) params.set("topics", picked.join(","));
     router.push(`/practice/session?${params}`);
+  }
+
+  // A genuinely empty question bank (a failed request shows the error page instead).
+  if (topics.every((t) => t.questionCount === 0)) {
+    return (
+      <EmptyState icon={<BookOpen className="size-6" />} title="No questions yet">
+        Questions appear here once they have been imported and approved for students.
+      </EmptyState>
+    );
   }
 
   return (
@@ -131,7 +140,7 @@ export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
               Start practice <ArrowRight className="size-4" aria-hidden />
             </Button>
             <p className="text-center text-xs text-ink-muted sm:text-right">
-              {Math.min(size, available)} of {available} available questions
+              {available === 0 ? "No questions in the selected topics yet" : `${Math.min(size, available)} of ${available} available questions`}
             </p>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { AppShell } from "@/components/app-shell";
 import { ProgressProvider } from "@/lib/progress-store";
 import { ProgressStatus } from "@/components/progress-status";
+import { OfflineNotice } from "@/components/offline-notice";
 import { AccountMenu, AccountMenuSkeleton } from "@/components/account-menu";
 import { AccountMenuBoundary } from "@/components/account-menu-boundary";
 
@@ -19,6 +20,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </AccountMenuBoundary>
       }
     >
+        <OfflineNotice />
         <ProgressStatus />
         {children}
       </AppShell>
