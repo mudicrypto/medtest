@@ -28,8 +28,9 @@ export function isPublished(q: { rights_status: RightsStatus; review_status: Rev
 export async function contentStats() {
   await requireStaff();
   const supabase = await createClient();
-  const { data } = await supabase.from("questions").select("review_status, origin, rights_status");
-  const rows = data ?? [];
+  const { data, error } = await supabase.from("questions").select("review_status, origin, rights_status");
+  if (error) throw new Error(`Could not load content stats: ${error.message}`);
+  const rows = data;
   const byStatus = Object.fromEntries(REVIEW_STATUSES.map((s) => [s, rows.filter((r) => r.review_status === s).length]));
   const byOrigin = Object.fromEntries(ORIGINS.map((o) => [o, rows.filter((r) => r.origin === o).length]));
   return { total: rows.length, published: rows.filter(isPublished).length, byStatus, byOrigin } as {
@@ -70,25 +71,28 @@ export async function listQuestionsForStaff(f: AdminQuestionFilters) {
 export async function getQuestionForStaff(slug: string) {
   await requireStaff();
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("questions")
     .select(
       "*, topics(name_en), question_options(position, text_en, text_ru), question_keys(correct, explanation_en, explanation_ru, tutor_hint), content_sources(title, publisher, rights_status, permission_evidence), reviewer:profiles!questions_reviewed_by_fkey(display_name)",
     )
     .eq("slug", slug)
     .maybeSingle();
+  if (error) throw new Error(`Could not load question: ${error.message}`);
   return data;
 }
 
 export async function listSources() {
   await requireStaff();
   const supabase = await createClient();
-  const { data } = await supabase.from("content_sources").select("*").order("created_at", { ascending: false });
-  return data ?? [];
+  const { data, error } = await supabase.from("content_sources").select("*").order("created_at", { ascending: false });
+  if (error) throw new Error(`Could not load sources: ${error.message}`);
+  return data;
 }
 
 export async function listTopicSlugs(): Promise<string[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("topics").select("slug").order("sort_order");
-  return (data ?? []).map((t) => t.slug);
+  const { data, error } = await supabase.from("topics").select("slug").order("sort_order");
+  if (error) throw new Error(`Could not load topics: ${error.message}`);
+  return data.map((t) => t.slug);
 }

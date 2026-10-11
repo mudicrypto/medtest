@@ -8,6 +8,7 @@ import { useProgress, type MockSummary } from "@/lib/progress-store";
 import type { Question, QuestionOption } from "@/lib/types";
 import { blueprints } from "@/demo/blueprints";
 import { startMock, submitMock, type MockGrade } from "@/app/(app)/question-actions";
+import { LoadError } from "@/components/load-error";
 import { SourceBadge } from "@/components/source-badge";
 import { Badge, Button, ButtonLink, Card, ProgressBar, Skeleton, cn } from "@/components/ui";
 
@@ -26,6 +27,7 @@ export function MockRunView() {
 
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, startSubmitting] = useTransition();
   const [startedAt, setStartedAt] = useState(0);
@@ -40,6 +42,8 @@ export function MockRunView() {
   // The server picks the exam's questions once, on mount.
   useEffect(() => {
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear a previous failure before trying again
+    setLoadError(false);
     startMock(blueprint.questionCount).then(
       (qs) => {
         if (cancelled) return;
@@ -53,7 +57,7 @@ export function MockRunView() {
     return () => {
       cancelled = true;
     };
-  }, [blueprint.questionCount]);
+  }, [blueprint.questionCount, loadAttempt]);
 
   const remaining = Math.max(0, blueprint.timeLimitMinutes * 60 - Math.floor((now - startedAt) / 1000));
 
@@ -99,12 +103,11 @@ export function MockRunView() {
 
   if (loadError) {
     return (
-      <Card className="p-8 text-center">
-        <p className="text-ink">We couldn&apos;t start the exam. Check your connection and try again.</p>
-        <ButtonLink href="/mock-exams" variant="secondary" className="mt-4">
-          Back to mock exams
-        </ButtonLink>
-      </Card>
+      <LoadError
+        message="We couldn't start the exam. Check your connection and try again."
+        onRetry={() => setLoadAttempt((n) => n + 1)}
+        back={{ href: "/mock-exams", label: "Back to mock exams" }}
+      />
     );
   }
   if (!questions || !ids || !store.ready) return <Skeleton className="h-[520px]" />;

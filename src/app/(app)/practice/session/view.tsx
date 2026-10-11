@@ -6,8 +6,9 @@ import { useSearchParams } from "next/navigation";
 import { ArrowRight, CircleCheck, CircleX, X } from "lucide-react";
 import { useProgress } from "@/lib/progress-store";
 import type { Question } from "@/lib/types";
-import { useQuestions } from "@/lib/use-questions";
+import { QUESTIONS_LOAD_ERROR, useQuestions } from "@/lib/use-questions";
 import { fetchQuestionRefs } from "@/app/(app)/question-actions";
+import { LoadError } from "@/components/load-error";
 import { QuestionCard } from "@/components/question-card";
 import { Button, ButtonLink, Card, ProgressBar, Skeleton } from "@/components/ui";
 
@@ -28,17 +29,20 @@ function Session({ params }: { params: URLSearchParams }) {
   const [results, setResults] = useState<Record<string, boolean>>({});
 
   const [failed, setFailed] = useState(false);
+  // Bumped by "Try again" to re-run the question picker below.
+  const [attempt, setAttempt] = useState(0);
 
   // Choose the session's questions once, when local progress has loaded, so
   // answering doesn't reshuffle the session.
   useEffect(() => {
     if (!store.ready || ids) return;
     let cancelled = false;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clear a previous failure before trying again
+    setFailed(false);
     const explicit = params.get("ids")?.split(",").filter(Boolean) ?? [];
     const topicFilter = params.get("topics")?.split(",").filter(Boolean) ?? [];
     const n = Math.max(1, Math.min(100, Number(params.get("n")) || 10));
     if (explicit.length) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- freeze session list once data is loaded
       setIds(explicit.slice(0, 300));
       return;
     }
@@ -60,18 +64,17 @@ function Session({ params }: { params: URLSearchParams }) {
     return () => {
       cancelled = true;
     };
-  }, [store.ready, store.attempts, ids, params]);
+  }, [store.ready, store.attempts, ids, params, attempt]);
 
   const loaded = useQuestions(ids);
 
   if (failed || loaded.status === "error") {
     return (
-      <Card className="p-8 text-center">
-        <p className="text-ink">We couldn&apos;t load your questions. Check your connection and try again.</p>
-        <ButtonLink href="/practice" variant="secondary" className="mt-4">
-          Back to practice
-        </ButtonLink>
-      </Card>
+      <LoadError
+        message={QUESTIONS_LOAD_ERROR}
+        onRetry={failed ? () => setAttempt((n) => n + 1) : loaded.retry}
+        back={{ href: "/practice", label: "Back to practice" }}
+      />
     );
   }
   if (!ids || loaded.status === "loading") return <Skeleton className="h-[520px]" />;

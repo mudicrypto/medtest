@@ -59,7 +59,7 @@ local URL and publishable key printed by `pnpm db:start` into `.env.local`.
 | `pnpm test` | Unit tests: scheduling, analytics, demo content integrity |
 | `pnpm test:db` | Database security tests: profiles, question visibility, answer keys, grading, import, private progress, terminology (needs `pnpm db:start`) |
 | `pnpm build` | Production build, which fails if anything is broken |
-| `pnpm test:e2e` | Clicks through the built app in a real browser, including sign-up via the test inbox (needs `pnpm db:start` and `pnpm build`) |
+| `pnpm test:e2e` | Clicks through the built app in a real browser, including sign-up via the test inbox and what students see if the database is unreachable (it briefly switches off the local database API, then restarts it). Needs `pnpm db:start` and `pnpm build` |
 | `pnpm db:types` | Regenerates `src/lib/supabase/database.types.ts` from the local database |
 | `pnpm content:seed` | Rebuilds `supabase/seed.sql` (local demo data) from `content/demo-questions.csv` |
 

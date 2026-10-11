@@ -50,10 +50,13 @@ function toQuestion(r: Row): Question {
 
 export async function listTopicsWithCounts(): Promise<TopicWithCount[]> {
   const supabase = await createClient();
-  const [{ data: topics }, { data: refs }] = await Promise.all([
+  const [{ data: topics, error: topicsError }, { data: refs, error: refsError }] = await Promise.all([
     supabase.from("topics").select("slug, name_en, name_ru").order("sort_order"),
     supabase.from("questions").select("topic"),
   ]);
+  // A failed request must not look like "no questions yet".
+  const error = topicsError ?? refsError;
+  if (error) throw new Error(`Could not load topics: ${error.message}`);
   const counts = new Map<string, number>();
   for (const r of refs ?? []) counts.set(r.topic, (counts.get(r.topic) ?? 0) + 1);
   return (topics ?? []).map((t) => ({
@@ -69,8 +72,9 @@ export async function listQuestionRefs(topics?: string[]): Promise<{ id: string;
   const supabase = await createClient();
   let q = supabase.from("questions").select("slug, topic").order("slug");
   if (topics?.length) q = q.in("topic", topics);
-  const { data } = await q;
-  return (data ?? []).map((r) => ({ id: r.slug, topic: r.topic }));
+  const { data, error } = await q;
+  if (error) throw new Error(`Could not load questions: ${error.message}`);
+  return data.map((r) => ({ id: r.slug, topic: r.topic }));
 }
 
 /** Full questions (without keys), returned in the order requested. */

@@ -3,6 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { ProgressProvider } from "@/lib/progress-store";
 import { ProgressStatus } from "@/components/progress-status";
 import { AccountMenu, AccountMenuSkeleton } from "@/components/account-menu";
+import { AccountMenuBoundary } from "@/components/account-menu-boundary";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   // The account menu reads the session, so it streams in behind its own
@@ -11,9 +12,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <ProgressProvider>
       <AppShell
       account={
-        <Suspense fallback={<AccountMenuSkeleton />}>
-          <AccountMenu />
-        </Suspense>
+        <AccountMenuBoundary>
+          <Suspense fallback={<AccountMenuSkeleton />}>
+            <AccountMenu />
+          </Suspense>
+        </AccountMenuBoundary>
       }
     >
         <ProgressStatus />

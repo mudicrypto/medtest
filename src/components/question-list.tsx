@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useQuestions } from "@/lib/use-questions";
+import { LoadError } from "./load-error";
 import { Badge, Card, Skeleton } from "./ui";
 
 /** Lists questions by id, loading their text from the server. */
 export function QuestionList({ ids, meta }: { ids: string[]; meta?: (id: string) => React.ReactNode }) {
   const loaded = useQuestions(ids);
   if (loaded.status === "loading") return <Skeleton className="h-64" />;
-  if (loaded.status === "error") return <Card className="p-6 text-sm text-danger">{loaded.message}</Card>;
+  if (loaded.status === "error") return <LoadError message={loaded.message} onRetry={loaded.retry} />;
 
   const missing = ids.length - loaded.questions.length;
   return (

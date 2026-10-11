@@ -30,11 +30,14 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   const claims = data?.claims;
   if (!claims?.sub) redirect("/login");
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("display_name, role, show_russian, target_exam_date")
     .eq("id", claims.sub)
-    .single();
+    .maybeSingle();
+  // A missing profile falls back to defaults below; a failed request is an
+  // error (otherwise an admin would briefly look like a student, for example).
+  if (error) throw new Error(`Could not load profile: ${error.message}`);
 
   return {
     id: claims.sub,

@@ -6,6 +6,9 @@ import { createServerClient } from "@supabase/ssr";
 import type { Database } from "./database.types";
 import { supabaseEnv } from "./env";
 
+/** How long one database request may take before it counts as failed. */
+const DB_TIMEOUT_MS = 10_000;
+
 /**
  * Supabase client for Server Components, Server Actions and Route Handlers.
  * Create a new one per request — never share it between requests.
@@ -19,6 +22,11 @@ export async function createClient() {
   await io();
 
   return createServerClient<Database>(url, key, {
+    // By default, a failed database read is retried 3 times with growing pauses
+    // (about 7 seconds), and a hung request waits indefinitely. A page often
+    // makes several reads, so an outage left students waiting a minute or more.
+    // Instead, give up quickly and show an error with a "Try again" button.
+    db: { timeout: DB_TIMEOUT_MS, retry: false },
     cookies: {
       getAll() {
         return cookieStore.getAll();

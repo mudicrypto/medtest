@@ -93,6 +93,8 @@ export interface ImportState {
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
+const DB_UNAVAILABLE = "We couldn't reach the database. Nothing was imported — please try again.";
+
 export async function importQuestions(_prev: ImportState, formData: FormData): Promise<ImportState> {
   await requireAdmin();
   const intent = formData.get("intent") === "import" ? "import" : "preview";
@@ -104,7 +106,13 @@ export async function importQuestions(_prev: ImportState, formData: FormData): P
   if (sourceId && !z.uuid().safeParse(sourceId).success) return { status: "error", message: "Invalid source." };
 
   const text = await file.text();
-  const result = parseQuestionsCsv(text, await listTopicSlugs());
+  let topics: string[];
+  try {
+    topics = await listTopicSlugs();
+  } catch {
+    return { status: "error", message: DB_UNAVAILABLE };
+  }
+  const result = parseQuestionsCsv(text, topics);
   if (result.fileErrors.length) return { status: "error", fileErrors: result.fileErrors };
 
   // Official or adapted material must be linked to a registered source.
@@ -119,8 +127,9 @@ export async function importQuestions(_prev: ImportState, formData: FormData): P
   const slugs = result.rows.map((r) => r.slug);
   const existing = new Set<string>();
   for (let i = 0; i < slugs.length; i += 500) {
-    const { data } = await supabase.from("questions").select("slug").in("slug", slugs.slice(i, i + 500));
-    for (const r of data ?? []) existing.add(r.slug);
+    const { data, error } = await supabase.from("questions").select("slug").in("slug", slugs.slice(i, i + 500));
+    if (error) return { status: "error", message: DB_UNAVAILABLE };
+    for (const r of data) existing.add(r.slug);
   }
 
   const summary: ImportState = {

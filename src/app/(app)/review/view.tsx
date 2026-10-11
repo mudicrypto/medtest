@@ -6,6 +6,7 @@ import { useProgress } from "@/lib/progress-store";
 import { isDue } from "@/lib/srs";
 import type { Term } from "@/lib/types";
 import { useQuestions } from "@/lib/use-questions";
+import { LoadError } from "@/components/load-error";
 import { QuestionCard } from "@/components/question-card";
 import { TermFlashcard } from "@/components/flashcard";
 import { Button, ButtonLink, EmptyState, PageHeader, ProgressBar, Skeleton } from "@/components/ui";
@@ -47,8 +48,6 @@ function ReviewQueue({
   const loaded = useQuestions(questionIds);
 
   if (!snapshot || loaded.status === "loading") return <Skeleton className="h-[480px]" />;
-  const questionById = loaded.status === "ready" ? new Map(loaded.questions.map((q) => [q.id, q])) : new Map();
-  const queue = snapshot.filter((id) => !id.startsWith("q:") || questionById.has(id.slice(2)));
 
   const header = (
     <PageHeader
@@ -57,6 +56,18 @@ function ReviewQueue({
       description="Items come back just before you're likely to forget them. Questions you miss return soon; ones you know well return after longer gaps."
     />
   );
+
+  // A failed load must not look like "nothing due".
+  if (loaded.status === "error") {
+    return (
+      <>
+        {header}
+        <LoadError message={loaded.message} onRetry={loaded.retry} />
+      </>
+    );
+  }
+  const questionById = new Map(loaded.questions.map((q) => [q.id, q]));
+  const queue = snapshot.filter((id) => !id.startsWith("q:") || questionById.has(id.slice(2)));
 
   if (queue.length === 0 || index >= queue.length) {
     const finished = queue.length > 0;
