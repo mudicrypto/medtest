@@ -58,17 +58,24 @@ touches your real Supabase project.
 
 ## Where things are
 
-- `src/app/(auth)/` holds sign in, sign up, forgot and reset password, and their server actions.
-- `src/app/auth/callback/` is where links in emails land.
-- `src/app/(app)/` holds the signed-in screens, including `settings/`.
+The app is in layers, so the data source can change without touching the screens:
+
+| Layer | Where | Talks to |
+|---|---|---|
+| **Content** | `content/demo-questions.csv` → `supabase/seed.sql`; terminology in the `terms` table (`supabase/migrations/20261014090000_terms.sql`); demo mock formats in `src/demo/blueprints.ts` | — |
+| **Data access** (server only) | `src/lib/content/` (questions, terms, admin), `src/lib/progress/server.ts`, `src/lib/auth.ts`, `src/lib/supabase/` | Supabase |
+| **Server functions** the screens call | `src/app/(app)/question-actions.ts`, `progress-actions.ts`, `settings/actions.ts`, `src/app/(auth)/actions.ts` | data access |
+| **Screens** | `src/app/(app)/*/` (signed in), `src/app/(auth)/` (sign in/up) | server functions, `src/lib/progress-store.tsx` |
+| **UI components** | `src/components/` (question card, answer review, flashcard, charts, error/empty/offline states) | nothing directly |
+
+Supabase is only ever used on the server. Answer keys reach the browser only
+after an answer has been graded.
+
+More detail:
 - `src/proxy.ts` runs before every page: it keeps the login fresh and sends signed-out visitors to sign in.
-- `src/lib/auth.ts` is the single place the server asks "who is signed in?".
-- `src/lib/supabase/` holds the Supabase connection and generated database types.
-- `supabase/migrations/` holds the database tables and security rules (SQL).
-- `src/app/(app)/admin/` holds the content admin: import, question review, sources.
-- `src/app/(app)/question-actions.ts` holds the server functions students call to load questions and submit answers.
-- `src/lib/content/` holds the CSV format and validation, plus question queries.
-- `content/demo-questions.csv` holds the 18 demo questions (also a worked example of the CSV format).
 - `src/lib/progress-store.tsx` holds the student's progress in the browser while they use the app; every change is saved through `src/app/(app)/progress-actions.ts`.
-- `src/demo/` holds **demo-only** mock exam formats. Terminology cards are in the `terms` table (added with the 20 demo cards by `supabase/migrations/20261014090000_terms.sql`).
+- `src/lib/features.ts` switches unfinished features off (the AI tutor prototype).
+- `src/app/(app)/error.tsx`, `not-found.tsx` and `src/components/load-error.tsx`, `offline-notice.tsx` are the error, not-found and offline states.
+- `src/app/(app)/admin/` holds the content admin: import, question review, sources.
+- `scripts/local-setup.ts` sets up local development (`pnpm local:setup`).
 - `tests/` holds unit tests, database security tests and browser tests.
