@@ -160,8 +160,8 @@ export function MockRunView() {
 
       <div className="grid gap-5 lg:grid-cols-[1fr_220px]">
         <Card className="overflow-hidden">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-5 py-3.5 sm:px-7">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-start justify-between gap-2 border-b border-line px-5 py-3.5 sm:px-7">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <span className="text-sm font-medium tabular-nums text-ink">Question {index + 1}</span>
               <SourceBadge origin={q.origin} />
             </div>
@@ -171,7 +171,7 @@ export function MockRunView() {
               aria-pressed={flags.includes(q.id)}
               title="Flag for review"
               className={cn(
-                "inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium",
+                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium",
                 flags.includes(q.id) ? "bg-warning-soft text-warning" : "text-ink-muted hover:bg-sunken",
               )}
             >

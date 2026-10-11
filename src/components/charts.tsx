@@ -51,7 +51,9 @@ export function TopicBars({ stats }: { stats: TopicStat[] }) {
 
 const W = 640;
 const H = 200;
-const PAD = { l: 44, r: 28, t: 12, b: 26 };
+// Axis labels are HTML next to the chart (not SVG text, which shrinks with
+// the chart on phones), so the plot itself only needs a little padding.
+const PAD = { l: 8, r: 12, t: 12, b: 4 };
 
 /** Daily accuracy line (0–100%). Days with no answers are gaps, not zeros. */
 export function AccuracyTrend({ days }: { days: DayStat[] }) {
@@ -78,67 +80,86 @@ export function AccuracyTrend({ days }: { days: DayStat[] }) {
 
   return (
     <figure>
-      <div className="relative">
-        <svg
-          viewBox={`0 0 ${W} ${H}`}
-          className="h-auto w-full touch-none select-none"
-          role="img"
-          aria-label="Daily accuracy over the last 14 days"
-          onPointerLeave={() => setHover(null)}
-          onPointerMove={(e) => {
-            const r = e.currentTarget.getBoundingClientRect();
-            const px = ((e.clientX - r.left) / r.width) * W;
-            const i = Math.round(((px - PAD.l) / iw) * (days.length - 1));
-            setHover(Math.max(0, Math.min(days.length - 1, i)));
-          }}
-        >
+      <div className="flex">
+        <div className="relative w-10 shrink-0" aria-hidden>
           {[0, 50, 100].map((g) => (
-            <g key={g}>
-              <line x1={PAD.l} x2={W - PAD.r} y1={y(g)} y2={y(g)} stroke="var(--color-line)" strokeDasharray={g ? "3 4" : undefined} />
-              <text x={PAD.l - 8} y={y(g) + 4} textAnchor="end" className="fill-ink-muted text-[11px]">
-                {g}%
-              </text>
-            </g>
-          ))}
-          {days.map((d, i) =>
-            // Every third day, counted back from today, so labels never collide.
-            (days.length - 1 - i) % 3 === 0 ? (
-              <text key={d.date} x={x(i)} y={H - 6} textAnchor={i === days.length - 1 ? "end" : "middle"} className="fill-ink-muted text-[11px]">
-                {shortDate(d.date)}
-              </text>
-            ) : null,
-          )}
-          {hover !== null && (
-            <line x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={PAD.t + ih} stroke="var(--color-line-strong)" />
-          )}
-          {segments.map((s, i) => (
-            <path key={i} d={s} fill="none" stroke="var(--color-accent)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-          ))}
-          {days.map((d, i) =>
-            d.accuracy === null ? null : (
-              <circle
-                key={d.date}
-                cx={x(i)}
-                cy={y(d.accuracy)}
-                r={hover === i ? 5 : 3.5}
-                fill="var(--color-surface)"
-                stroke="var(--color-accent)"
-                strokeWidth={2}
-              />
-            ),
-          )}
-        </svg>
-        {h && hover !== null && (
-          <div
-            className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-lg bg-ink px-2.5 py-1.5 text-xs text-white shadow"
-            style={{ left: `${(x(hover) / W) * 100}%` }}
-          >
-            <span className="font-medium">{shortDate(h.date)}</span>
-            <span className="text-white/75">
-              {" "}
-              · {h.accuracy === null ? "no practice" : `${h.accuracy}% of ${h.answered}`}
+            <span
+              key={g}
+              className="absolute right-2 -translate-y-1/2 text-[11px] tabular-nums text-ink-muted"
+              style={{ top: `${(y(g) / H) * 100}%` }}
+            >
+              {g}%
             </span>
-          </div>
+          ))}
+        </div>
+        <div className="relative min-w-0 flex-1">
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            className="h-auto w-full touch-none select-none"
+            role="img"
+            aria-label="Daily accuracy over the last 14 days"
+            onPointerLeave={() => setHover(null)}
+            onPointerMove={(e) => {
+              const r = e.currentTarget.getBoundingClientRect();
+              const px = ((e.clientX - r.left) / r.width) * W;
+              const i = Math.round(((px - PAD.l) / iw) * (days.length - 1));
+              setHover(Math.max(0, Math.min(days.length - 1, i)));
+            }}
+          >
+            {[0, 50, 100].map((g) => (
+              <g key={g}>
+                <line x1={PAD.l} x2={W - PAD.r} y1={y(g)} y2={y(g)} stroke="var(--color-line)" strokeDasharray={g ? "3 4" : undefined} />
+              </g>
+            ))}
+            {hover !== null && (
+              <line x1={x(hover)} x2={x(hover)} y1={PAD.t} y2={PAD.t + ih} stroke="var(--color-line-strong)" />
+            )}
+            {segments.map((s, i) => (
+              <path key={i} d={s} fill="none" stroke="var(--color-accent)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+            ))}
+            {days.map((d, i) =>
+              d.accuracy === null ? null : (
+                <circle
+                  key={d.date}
+                  cx={x(i)}
+                  cy={y(d.accuracy)}
+                  r={hover === i ? 5 : 3.5}
+                  fill="var(--color-surface)"
+                  stroke="var(--color-accent)"
+                  strokeWidth={2}
+                />
+              ),
+            )}
+          </svg>
+          {h && hover !== null && (
+            <div
+              className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 rounded-lg bg-ink px-2.5 py-1.5 text-xs text-white shadow"
+              style={{ left: `${(x(hover) / W) * 100}%` }}
+            >
+              <span className="font-medium">{shortDate(h.date)}</span>
+              <span className="text-white/75">
+                {" "}
+                · {h.accuracy === null ? "no practice" : `${h.accuracy}% of ${h.answered}`}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="relative ml-10 mt-1 h-4" aria-hidden>
+        {days.map((d, i) =>
+          // Every third day, counted back from today, so labels never collide.
+          (days.length - 1 - i) % 3 === 0 ? (
+            <span
+              key={d.date}
+              className={cn(
+                "absolute top-0 whitespace-nowrap text-[11px] text-ink-muted",
+                i === days.length - 1 ? "-translate-x-full" : "-translate-x-1/2",
+              )}
+              style={{ left: `${(x(i) / W) * 100}%` }}
+            >
+              {shortDate(d.date)}
+            </span>
+          ) : null,
         )}
       </div>
       <DataTable

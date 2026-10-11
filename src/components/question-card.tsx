@@ -75,12 +75,13 @@ export function QuestionCard({
   return (
     <>
       <Card className="overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-3.5 sm:px-7">
-          <div className="flex flex-wrap items-center gap-2">
+        {/* Badges wrap on the left; the RU and bookmark buttons stay top right. */}
+        <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-3.5 sm:px-7">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Badge>{question.topicName}</Badge>
             <SourceBadge origin={question.origin} reviewStatus={question.reviewStatus} />
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             {question.stemRu && (
               <button
                 type="button"

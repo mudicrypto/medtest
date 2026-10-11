@@ -68,3 +68,20 @@ test("an unknown address shows a friendly 404 page", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Go to the home page" })).toHaveAttribute("href", "/");
 });
+
+test("question headers keep their buttons on the first row, even on small phones", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 740 });
+  const top = async (l: import("@playwright/test").Locator) => (await l.boundingBox())!.y;
+
+  await page.goto("/questions/q-card-01");
+  const main = page.getByRole("main");
+  const topic = main.getByText("Cardiology", { exact: true }).first();
+  const bookmark = main.getByRole("button", { name: /bookmark/i });
+  await expect(bookmark).toBeVisible();
+  expect(Math.abs((await top(bookmark)) - (await top(topic)))).toBeLessThan(12);
+
+  await page.goto("/mock-exams/run?b=demo-quick");
+  const flag = main.getByRole("button", { name: /^Flag/ });
+  await expect(flag).toBeVisible();
+  expect(Math.abs((await top(flag)) - (await top(main.getByText("Question 1", { exact: true }))))).toBeLessThan(12);
+});
