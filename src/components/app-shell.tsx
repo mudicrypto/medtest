@@ -111,7 +111,7 @@ export function AppShell({ children, account }: { children: React.ReactNode; acc
 
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-dvh flex-col border-r border-line bg-surface/70 px-4 py-6 backdrop-blur lg:flex">
-        <Link href="/" className="mb-8 px-2">
+        <Link href="/dashboard" className="mb-8 px-2" aria-label="MedPrep dashboard">
           <Logo />
         </Link>
         <nav aria-label="Main" className="flex flex-col gap-0.5">
@@ -131,7 +131,7 @@ export function AppShell({ children, account }: { children: React.ReactNode; acc
       <div className="flex min-w-0 flex-col">
         {/* Mobile top bar */}
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-surface/85 px-4 backdrop-blur lg:hidden">
-          <Link href="/">
+          <Link href="/dashboard" aria-label="MedPrep dashboard">
             <Logo />
           </Link>
           <button

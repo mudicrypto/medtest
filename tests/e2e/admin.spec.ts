@@ -39,15 +39,25 @@ test("students can't open the admin area", async ({ page }) => {
   // The page streams, so the HTTP status is already sent; what matters is that
   // nothing from the admin area is rendered.
   await page.goto("/admin");
-  await expect(page.getByText("This page could not be found.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Admin" })).toHaveCount(0);
   await expect(page.getByText("Content admin")).toHaveCount(0);
   const template = await page.request.get("/admin/template.csv");
   expect(template.status()).toBe(404);
 });
 
+// Questions this file imports. Deleted afterwards so test questions never show
+// up for students when you use the local app.
+const importedSlugs: string[] = [];
+test.afterAll(async () => {
+  if (!importedSlugs.length) return;
+  const { error } = await admin.from("questions").delete().in("slug", importedSlugs);
+  if (error) throw error;
+});
+
 test("admin: check a CSV, fix errors, import, approve, and the question reaches students", async ({ page, browser }) => {
   const slug = `e2e-${Date.now()}`;
+  importedSlugs.push(slug);
   await signInAs(page, "admin");
   await page.getByRole("link", { name: "Content admin" }).first().click();
   await expect(page.getByRole("heading", { name: "Question bank" })).toBeVisible();
