@@ -5,50 +5,42 @@
 Exam preparation for English-speaking medical graduates taking Russian Primary
 Accreditation in General Medicine (Лечебное дело).
 
-**Status: Milestone 4.** Real accounts, plus a database-backed question bank:
-- questions and answer keys live in Supabase, and **every answer is graded on the server**;
-- each question records its source, rights and medical-review status;
-- the admin area imports CSV spreadsheets and handles the review workflow.
+**Status:** the student app is being finished and polished **locally**, before
+it's connected to a real Supabase project.
+
+What works:
+- accounts: sign up, sign in, password reset, settings;
+- practice by topic, with answers **graded on the server**, explanations, and a
+  results screen that reviews every answer;
+- Daily review (spaced repetition), Mistakes, Bookmarks, timed mock exams,
+  Russian ↔ English terminology flashcards, and progress charts;
+- clear loading, empty, offline and "couldn't load, try again" states;
+- a content admin area for importing questions (CSV) and medical review.
 
 Each student's progress is saved to their account, so it follows them across
-devices: answer history, mistakes, bookmarks, the review schedule for questions
-and terms, mock exam results, and the Russian-text preference. Terminology cards
-and mock exam formats are still demo content.
+devices. **All questions, terminology cards and mock exam formats are currently
+demo content, labelled DEMO.** They are not official exam material. The AI tutor
+is a scripted prototype and is switched off (`src/lib/features.ts`).
 
-**Milestone 5:** the 20 terminology cards now live in the database (`terms`
-table) with their original IDs, so existing review progress is kept. Students
-only see terms whose rights are cleared and that are approved (or labelled
-demo); only admins can change them.
-
-- Plan: [docs/PROPOSAL.md](docs/PROPOSAL.md)
-- Connect your Supabase project: [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
+- **Run it locally (start here):** [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md)
+- Connect your own Supabase project later: [docs/SUPABASE_SETUP.md](docs/SUPABASE_SETUP.md)
 - Add and review questions: [docs/CONTENT_GUIDE.md](docs/CONTENT_GUIDE.md)
-- Screenshots: [docs/screenshots](docs/screenshots)
+- Plan: [docs/PROPOSAL.md](docs/PROPOSAL.md) · Screenshots: [docs/screenshots](docs/screenshots)
 
 ## Run it on your computer
 
-You need **Node.js 20.9+** (from nodejs.org) and **pnpm** (`npm install -g pnpm`).
+You need **Node.js 20.9+**, **pnpm** and **Docker Desktop**. The full guide is
+in [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md).
 
 ```bash
 pnpm install          # download libraries (one time)
-cp .env.example .env.local   # then fill it in, see docs/SUPABASE_SETUP.md
-pnpm dev              # start the app at http://localhost:3000
+pnpm db:start         # start the private local database (Docker)
+pnpm local:setup      # point the app at it and create demo accounts
+pnpm dev              # open http://localhost:3000
 ```
 
-### Optional: a private local database for development and tests
-
-If you install **Docker Desktop**, you can run a complete copy of Supabase on
-your computer. Nothing is shared with the cloud project.
-
-```bash
-pnpm db:start         # start local Supabase (first run downloads ~1–2 GB)
-pnpm db:reset         # rebuild the local database from supabase/migrations
-pnpm db:stop          # stop it
-```
-
-While it's running, emails (confirmations, password resets) are caught by a
-local test inbox at <http://127.0.0.1:54324> instead of being sent. Put the
-local URL and publishable key printed by `pnpm db:start` into `.env.local`.
+Sign in as `student@medprep.local` (password `Medprep-local-1`). Nothing here
+touches your real Supabase project.
 
 ## Checks
 
@@ -62,6 +54,7 @@ local URL and publishable key printed by `pnpm db:start` into `.env.local`.
 | `pnpm test:e2e` | Clicks through the built app in a real browser, including sign-up via the test inbox and what students see if the database is unreachable (it briefly switches off the local database API, then restarts it). Needs `pnpm db:start` and `pnpm build` |
 | `pnpm db:types` | Regenerates `src/lib/supabase/database.types.ts` from the local database |
 | `pnpm content:seed` | Rebuilds `supabase/seed.sql` (local demo data) from `content/demo-questions.csv` |
+| `pnpm local:setup` | Points `.env.local` at the local database and creates the demo accounts (local only) |
 
 ## Where things are
 

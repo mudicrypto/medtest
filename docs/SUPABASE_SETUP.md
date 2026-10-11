@@ -3,6 +3,10 @@
 This guide connects the app to **your real Supabase project** in the cloud. You
 only do it once. Each step says what it's for.
 
+> **Not needed yet.** To run and test the app on your computer, use the private
+> local database instead: [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md). Follow
+> this guide only when you're ready to connect your own project.
+
 > **Golden rule:** two values are safe to share and to use in the app: the
 > **Project URL** and the **publishable key** (called the "anon key" on older
 > projects). The **secret / service_role key** and the **database password**
