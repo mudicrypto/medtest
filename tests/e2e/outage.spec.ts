@@ -86,7 +86,7 @@ test("Practice shows an error, not an empty list, and Try again recovers", async
 
   await startDatabase();
   await errorPage(page).getByRole("button", { name: "Try again" }).click();
-  await expect(main(page).getByRole("button", { name: /Cardiology/ })).toBeVisible();
+  await expect(main(page).getByRole("button", { name: /^Cardiology Кардиология/ })).toBeVisible();
   await expect(main(page).getByText(/of [1-9]\d* available questions/)).toBeVisible();
   await expect(main(page).getByRole("heading", { name: "Something went wrong" })).toHaveCount(0);
 });
@@ -94,7 +94,7 @@ test("Practice shows an error, not an empty list, and Try again recovers", async
 test("starting a practice session during an outage offers Try again", async ({ page }) => {
   await signIn(page);
   await page.goto("/practice");
-  await expect(main(page).getByRole("button", { name: /Cardiology/ })).toBeVisible();
+  await expect(main(page).getByRole("button", { name: /^Cardiology Кардиология/ })).toBeVisible();
 
   stopDatabase();
   await main(page).getByRole("button", { name: "Start practice" }).click();
@@ -140,7 +140,7 @@ test("a hung database gives up within seconds instead of leaving students waitin
 
   await startDatabase();
   await errorPage(page).getByRole("button", { name: "Try again" }).click();
-  await expect(main(page).getByRole("button", { name: /Cardiology/ })).toBeVisible();
+  await expect(main(page).getByRole("button", { name: /^Cardiology Кардиология/ })).toBeVisible();
 });
 
 test("progress that failed to load is fetched again when the connection returns", async ({ page, context }) => {

@@ -78,6 +78,7 @@ export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
                   {on && <Check className="size-3.5" aria-hidden />}
                 </span>
                 <span className="min-w-0">
+                  {t.path && <span className="mb-0.5 block text-[11px] font-medium uppercase tracking-wide text-accent">{t.path}</span>}
                   <span className="block text-sm font-medium text-ink">{t.nameEn}</span>
                   <span lang="ru" className="block text-xs text-ink-muted">
                     {t.nameRu}

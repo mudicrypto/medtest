@@ -51,7 +51,7 @@ function toQuestion(r: Row): Question {
 export async function listTopicsWithCounts(): Promise<TopicWithCount[]> {
   const supabase = await createClient();
   const [{ data: topics, error: topicsError }, { data: refs, error: refsError }] = await Promise.all([
-    supabase.from("topics").select("slug, name_en, name_ru").order("sort_order"),
+    supabase.from("topics").select("slug, name_en, name_ru, parent_slug, category_en").order("sort_order"),
     supabase.from("questions").select("topic"),
   ]);
   // A failed request must not look like "no questions yet".
@@ -59,11 +59,13 @@ export async function listTopicsWithCounts(): Promise<TopicWithCount[]> {
   if (error) throw new Error(`Could not load topics: ${error.message}`);
   const counts = new Map<string, number>();
   for (const r of refs ?? []) counts.set(r.topic, (counts.get(r.topic) ?? 0) + 1);
+  const nameOf = new Map((topics ?? []).map((t) => [t.slug, t.name_en]));
   return (topics ?? []).map((t) => ({
     slug: t.slug,
     nameEn: t.name_en,
     nameRu: t.name_ru,
     questionCount: counts.get(t.slug) ?? 0,
+    path: t.parent_slug ? [nameOf.get(t.parent_slug) ?? t.parent_slug, t.category_en].filter(Boolean).join(" › ") : null,
   }));
 }
 

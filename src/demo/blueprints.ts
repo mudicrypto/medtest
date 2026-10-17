@@ -20,6 +20,6 @@ export const blueprints: ExamBlueprint[] = [
     timeLimitMinutes: 25,
     passThresholdPct: 70,
     isDemo: true,
-    note: "Uses every demo question. Not the official exam format.",
+    note: "18 questions picked at random from the bank. Not the official exam format.",
   },
 ];

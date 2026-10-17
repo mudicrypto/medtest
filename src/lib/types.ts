@@ -58,7 +58,8 @@ export interface Question {
  */
 export interface QuestionKey {
   correct: QuestionOption["id"];
-  explanationEn: string;
+  /** null when the source didn't include one; never invented. */
+  explanationEn: string | null;
   explanationRu: string | null;
   /** Short reply used by the demo tutor. */
   tutorHint: string;
@@ -73,6 +74,8 @@ export interface GradeResult {
 
 export interface TopicWithCount extends Topic {
   questionCount: number;
+  /** Where a sub-topic sits, e.g. "Cardiology › Medications"; null for top-level topics. */
+  path: string | null;
 }
 
 /** A terminology card, loaded from the `terms` table. */

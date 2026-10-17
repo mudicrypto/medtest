@@ -8,6 +8,7 @@ import { submitAnswer } from "@/app/(app)/question-actions";
 import { SourceBadge } from "./source-badge";
 import { Badge, Button, Card, cn } from "./ui";
 import { TutorDrawer } from "./tutor";
+import { NO_EXPLANATION } from "./answer-review";
 import { TUTOR_ENABLED } from "@/lib/features";
 
 type OptionId = QuestionOption["id"];
@@ -200,7 +201,11 @@ export function QuestionCard({
               {result.correct ? "Correct" : `Not quite — the answer is ${result.key.correct}`}
             </p>
             <h3 className="mt-4 text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Explanation</h3>
-            <p className="mt-1.5 font-serif text-[1.02rem] leading-[1.7] text-ink-soft">{result.key.explanationEn}</p>
+            {result.key.explanationEn ? (
+              <p className="mt-1.5 font-serif text-[1.02rem] leading-[1.7] text-ink-soft">{result.key.explanationEn}</p>
+            ) : (
+              <p className="mt-1.5 text-sm text-ink-muted">{NO_EXPLANATION}</p>
+            )}
 
             {question.keyTerms.length > 0 && (
               <>

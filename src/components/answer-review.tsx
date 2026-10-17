@@ -6,12 +6,15 @@ import { Card, cn } from "./ui";
 
 type OptionId = QuestionOption["id"];
 
+/** Shown when a question's source has no explanation. We never write one ourselves. */
+export const NO_EXPLANATION = "No explanation has been added for this question yet.";
+
 export interface ReviewedAnswer {
   question: Question;
   /** null when the question was left unanswered (mock exams). */
   selected: OptionId | null;
   correct: OptionId;
-  explanationEn: string;
+  explanationEn: string | null;
 }
 
 const STATUS = {
@@ -64,7 +67,11 @@ export function AnswerReview({ items }: { items: ReviewedAnswer[] }) {
               </div>
               <div className="pt-1">
                 <dt className="sr-only">Explanation</dt>
-                <dd className="font-serif leading-relaxed text-ink-soft">{explanationEn}</dd>
+                {explanationEn ? (
+                  <dd className="font-serif leading-relaxed text-ink-soft">{explanationEn}</dd>
+                ) : (
+                  <dd className="text-ink-muted">{NO_EXPLANATION}</dd>
+                )}
               </div>
             </dl>
             <Link href={`/questions/${q.id}`} className="ml-8 mt-3 inline-block text-sm text-accent hover:underline">

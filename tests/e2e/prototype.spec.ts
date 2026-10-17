@@ -38,7 +38,7 @@ for (const path of pages) {
 
 test("practice flow: answer, see explanation, bookmark, finish", async ({ page }) => {
   await page.goto("/practice");
-  await page.getByRole("button", { name: /Cardiology/ }).click();
+  await page.getByRole("button", { name: /^Cardiology Кардиология/ }).click();
   await page.getByRole("radio", { name: "5" }).click();
   await page.getByRole("button", { name: "Start practice" }).click();
 

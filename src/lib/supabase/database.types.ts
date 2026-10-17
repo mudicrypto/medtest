@@ -129,16 +129,36 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
-                },"question_keys": {
+                },"question_import_issues": {
                   Row: {
-                    "correct": string,"explanation_en": string,"explanation_ru": string | null,"question_id": string,"references": string | null,"tutor_hint": string | null
+                    "batch": string,"issues": (string)[],"record": NonNullable<Json>,"slug": string,"source_ref": string | null,"topic": string | null,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "correct": string,"explanation_en": string,"explanation_ru"?: string | null,"question_id": string,"references"?: string | null,"tutor_hint"?: string | null
+                    "batch": string,"issues": (string)[],"record": NonNullable<Json>,"slug": string,"source_ref"?: string | null,"topic"?: string | null,"updated_at"?: string
                   }
                   Update: {
-                    "correct"?: string,"explanation_en"?: string,"explanation_ru"?: string | null,"question_id"?: string,"references"?: string | null,"tutor_hint"?: string | null
+                    "batch"?: string,"issues"?: (string)[],"record"?: NonNullable<Json>,"slug"?: string,"source_ref"?: string | null,"topic"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "question_import_issues_topic_fkey"
+      columns: ["topic"]
+isOneToOne: false
+      referencedRelation: "topics"
+      referencedColumns: ["slug"]
+    }
+                  ]
+                },"question_keys": {
+                  Row: {
+                    "correct": string,"explanation_en": string | null,"explanation_ru": string | null,"question_id": string,"references": string | null,"tutor_hint": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "correct": string,"explanation_en"?: string | null,"explanation_ru"?: string | null,"question_id": string,"references"?: string | null,"tutor_hint"?: string | null
+                  }
+                  Update: {
+                    "correct"?: string,"explanation_en"?: string | null,"explanation_ru"?: string | null,"question_id"?: string,"references"?: string | null,"tutor_hint"?: string | null
                   }
                   Relationships: [
                     {
@@ -243,17 +263,23 @@ isOneToOne: false
                   ]
                 },"topics": {
                   Row: {
-                    "name_en": string,"name_ru": string,"slug": string,"sort_order": number
+                    "category_en": string | null,"category_ru": string | null,"name_en": string,"name_ru": string,"parent_slug": string | null,"slug": string,"sort_order": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "name_en": string,"name_ru": string,"slug": string,"sort_order"?: number
+                    "category_en"?: string | null,"category_ru"?: string | null,"name_en": string,"name_ru": string,"parent_slug"?: string | null,"slug": string,"sort_order"?: number
                   }
                   Update: {
-                    "name_en"?: string,"name_ru"?: string,"slug"?: string,"sort_order"?: number
+                    "category_en"?: string | null,"category_ru"?: string | null,"name_en"?: string,"name_ru"?: string,"parent_slug"?: string | null,"slug"?: string,"sort_order"?: number
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "topics_parent_slug_fkey"
+      columns: ["parent_slug"]
+isOneToOne: false
+      referencedRelation: "topics"
+      referencedColumns: ["slug"]
+    }
                   ]
                 }
           }

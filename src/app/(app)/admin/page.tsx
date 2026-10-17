@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { FileUp, Library, ListChecks } from "lucide-react";
-import { contentStats, ORIGINS, REVIEW_STATUSES } from "@/lib/content/admin";
+import { contentStats, listImportIssues, ORIGINS, REVIEW_STATUSES } from "@/lib/content/admin";
 import { Card, PageHeader, Skeleton, StatTile } from "@/components/ui";
 import { originLabel, ReviewBadge } from "./status";
 
@@ -21,7 +21,46 @@ export default function AdminHome() {
         <QuickLink href="/admin/questions?status=in_review" icon={<ListChecks className="size-5" />} title="Review queue" text="Questions waiting for review." />
         <QuickLink href="/admin/sources" icon={<Library className="size-5" />} title="Sources & permissions" text="Where content comes from." />
       </div>
+      <Suspense fallback={<Skeleton className="mt-6 h-40" />}>
+        <ImportIssues />
+      </Suspense>
     </>
+  );
+}
+
+/** Source records that couldn't be imported as complete questions. */
+async function ImportIssues() {
+  const issues = await listImportIssues();
+  if (!issues.length) return null;
+  return (
+    <Card className="mt-6 overflow-hidden">
+      <div className="border-b border-line px-5 py-4">
+        <h2 className="text-sm font-semibold text-ink">Needs correction ({issues.length})</h2>
+        <p className="mt-1 text-sm text-ink-muted">
+          Imported records that aren&apos;t complete questions yet. They are kept unchanged and hidden from students. Correct the
+          source file and run the import again; fixed records move into the question bank automatically.
+        </p>
+      </div>
+      <ul className="divide-y divide-line text-sm">
+        {issues.map((i) => (
+          <li key={i.slug} className="flex flex-col gap-1 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <span className="min-w-0">
+              <span className="block font-mono text-xs text-ink">{i.slug}</span>
+              <span className="block text-xs text-ink-muted">
+                {i.topics?.name_en ?? i.batch} · {i.source_ref}
+              </span>
+            </span>
+            <span className="flex shrink-0 flex-wrap gap-1.5">
+              {i.issues.map((x) => (
+                <span key={x} className="whitespace-nowrap rounded-md bg-warning-soft px-2 py-0.5 text-xs text-warning">
+                  {x.replaceAll("_", " ")}
+                </span>
+              ))}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 

@@ -122,3 +122,46 @@ The app records who changed the status and when, plus your optional note.
 When real content is in, retire the 18 demo questions: open **Questions**,
 filter **Origin → Demo**, and set each to **Retire**. In production, simply
 don't import `content/demo-questions.csv` in the first place.
+
+## Importing a bilingual question bank (local database only)
+
+Large banks prepared as `medprep-staging-1` JSON, such as **Cardiology →
+Medications**, are imported with a command instead of the CSV page. The tool
+only accepts the local database on your computer.
+
+1. Put the file where the tool expects it. For Cardiology that's
+   `content/private/cardiology/medprep_cardiology_draft_questions.json`. The
+   `content/private/` folder is **ignored by git**, so the questions aren't
+   uploaded to GitHub unless you decide otherwise.
+2. Check the file without changing anything:
+   `pnpm content:import cardiology --dry-run`
+3. Import it: `pnpm content:import cardiology`. It writes everything in one
+   step: if anything fails, nothing is saved. It then checks every question in
+   the database against the file.
+4. Check again at any time: `pnpm content:import cardiology --verify`
+
+**What the import does:**
+- **Texts, options and answer keys are copied exactly.** Russian and English
+  texts are not rewritten. Options 0–3 become A–D, and the answer key must be
+  the same in both languages.
+- **Stable IDs.** Each question keeps its source ID (for example
+  `cardio-medications-01-q0025`) and a reference to the source file and
+  question number. Re-importing updates questions in place, so students'
+  progress and bookmarks stay attached.
+- **Topics** are created under their parent and category (Cardiology ›
+  Medications), with the official English and Russian names.
+- **Nothing is invented.** There are no made-up explanations, options,
+  reviewers or review dates. When a question has no explanation, students see
+  "No explanation has been added for this question yet."
+- **Review provenance.** The owner's statement that the bank is medically
+  reviewed and its rights established is recorded on the **source** (Content
+  admin → Sources). Each question's review note says the review is at bank
+  level, and keeps the file's own original status.
+- **Incomplete records** (truncated text, not exactly four options, options
+  that differ between the languages) are **not** turned into questions. They
+  are kept unchanged on the **Needs correction** list on the Content admin
+  overview, and students never see them. Fix the source file and import again;
+  corrected records move into the question bank automatically.
+
+`pnpm db:reset` deletes imported banks from the local database. Run the import
+again afterwards.

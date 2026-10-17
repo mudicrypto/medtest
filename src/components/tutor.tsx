@@ -47,7 +47,7 @@ function scriptedReply(prompt: string, ctx?: TutorContext): string {
   if (p.includes("memory") || p.includes("remember") || p.includes("hook")) {
     return `Memory hook: ${qkey.tutorHint}`;
   }
-  return qkey.explanationEn;
+  return qkey.explanationEn ?? "There's no explanation for this question yet.";
 }
 
 const contextualPrompts = ["Why is my answer wrong?", "Explain the key Russian terms", "Give me a memory hook"];

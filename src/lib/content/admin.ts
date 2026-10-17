@@ -96,3 +96,15 @@ export async function listTopicSlugs(): Promise<string[]> {
   if (error) throw new Error(`Could not load topics: ${error.message}`);
   return data.map((t) => t.slug);
 }
+
+/** Imported records that need correcting before they can become questions. Never shown to students. */
+export async function listImportIssues() {
+  await requireStaff();
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("question_import_issues")
+    .select("slug, batch, source_ref, issues, updated_at, topics(name_en)")
+    .order("slug");
+  if (error) throw new Error(`Could not load import issues: ${error.message}`);
+  return data;
+}

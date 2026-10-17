@@ -77,7 +77,7 @@ export interface MockGrade {
   selected: QuestionOption["id"] | null;
   correct: QuestionOption["id"];
   isCorrect: boolean;
-  explanationEn: string;
+  explanationEn: string | null;
 }
 
 export interface MockSubmission {
