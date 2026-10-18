@@ -74,7 +74,8 @@ test("both topics appear under Cardiology › Medications and start a topic sess
     [glycosides, "cardio-medications-01", "Сердечные гликозиды, нитраты, нитроглицерин, ингибиторы АПФ, циклооксигеназы"],
     [statins, "cardio-medications-02", "Статины, диуретики, блокаторы ангиотензина, имидозалина"],
   ] as const) {
-    await expect(tile).toContainText("Cardiology › Medications");
+    // Listed under the "Cardiology › Medications" heading (separate from General Medicine).
+    await expect(main.locator("section[aria-label='Cardiology › Medications']").getByRole("button", { name: new RegExp(slug === "cardio-medications-01" ? "^Cardiac glycosides" : "^Statins") })).toBeVisible();
     await expect(tile).toContainText(ru);
     await expect(tile).toContainText(`${topicCounts[slug]} questions`);
   }

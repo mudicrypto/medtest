@@ -54,7 +54,7 @@ export function AnalyticsView({ topics }: { topics: TopicWithCount[] }) {
       <Card className="mt-4 p-6">
         <h2 className="font-semibold text-ink">Accuracy by topic</h2>
         <p className="mb-6 text-sm text-ink-muted">Weakest first — this is where practice pays off most.</p>
-        <TopicBars stats={topicStats(s.attempts, topics)} />
+        <TopicBars stats={topicStats(s.attempts, topics.filter((t) => t.questionCount > 0))} />
       </Card>
 
     </>

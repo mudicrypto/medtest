@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CircleCheck, CircleMinus, CircleX } from "lucide-react";
+import { CircleCheck, CircleHelp, CircleMinus, CircleX } from "lucide-react";
 import type { Question, QuestionOption } from "@/lib/types";
 import { SourceBadge } from "./source-badge";
 import { Card, cn } from "./ui";
@@ -13,7 +13,8 @@ export interface ReviewedAnswer {
   question: Question;
   /** null when the question was left unanswered (mock exams). */
   selected: OptionId | null;
-  correct: OptionId;
+  /** null when the source marks no correct answer: the question isn't scored. */
+  correct: OptionId | null;
   explanationEn: string | null;
 }
 
@@ -21,7 +22,11 @@ const STATUS = {
   correct: { label: "Correct", icon: CircleCheck, tone: "text-success" },
   incorrect: { label: "Incorrect", icon: CircleX, tone: "text-danger" },
   unanswered: { label: "Not answered", icon: CircleMinus, tone: "text-ink-muted" },
+  unscored: { label: "Not scored", icon: CircleHelp, tone: "text-ink-muted" },
 } as const;
+
+/** Shown when the source marks no correct answer. */
+export const NO_ANSWER_KEY = "The source doesn't mark a correct answer for this question, so it isn't scored.";
 
 /**
  * Question-by-question review after a practice session or mock exam: the
@@ -32,7 +37,7 @@ export function AnswerReview({ items }: { items: ReviewedAnswer[] }) {
   return (
     <Card className="divide-y divide-line">
       {items.map(({ question: q, selected, correct, explanationEn }, i) => {
-        const status = selected === null ? "unanswered" : selected === correct ? "correct" : "incorrect";
+        const status = correct === null ? "unscored" : selected === null ? "unanswered" : selected === correct ? "correct" : "incorrect";
         const s = STATUS[status];
         const optionText = (id: OptionId) => q.options.find((o) => o.id === id)?.textEn;
         return (
@@ -61,9 +66,13 @@ export function AnswerReview({ items }: { items: ReviewedAnswer[] }) {
               </div>
               <div>
                 <dt className="inline text-ink-muted">Correct answer: </dt>
-                <dd className="inline font-medium text-success">
-                  {correct} — {optionText(correct)}
-                </dd>
+                {correct ? (
+                  <dd className="inline font-medium text-success">
+                    {correct} — {optionText(correct)}
+                  </dd>
+                ) : (
+                  <dd className="inline text-ink-muted">{NO_ANSWER_KEY}</dd>
+                )}
               </div>
               <div className="pt-1">
                 <dt className="sr-only">Explanation</dt>

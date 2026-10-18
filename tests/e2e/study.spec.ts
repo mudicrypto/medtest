@@ -37,7 +37,7 @@ test("topic practice, mistakes, bookmarks and progress", async ({ page }) => {
 
   // 1. Practise one topic. Its two questions come unseen, in slug order.
   await page.goto("/practice");
-  await main.getByRole("button", { name: /Gastroenterology/ }).click();
+  await main.getByRole("button", { name: /^Gastroenterology Гастроэнтерология/ }).click();
   await expect(main.getByText("2 of 2 available questions")).toBeVisible();
   await main.getByRole("button", { name: "Start practice" }).click();
   await expect(page).toHaveURL(/topics=gastroenterology/);

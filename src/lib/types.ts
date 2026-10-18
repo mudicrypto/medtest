@@ -29,7 +29,8 @@ export interface TermRef {
 }
 
 export interface QuestionOption {
-  id: "A" | "B" | "C" | "D";
+  /** Option letter, "A" … "M". Most questions have A–D, but source banks are imported as-is (1–13 options). */
+  id: string;
   textEn: string;
   textRu?: string;
 }
@@ -49,6 +50,12 @@ export interface Question {
   reviewStatus: ReviewStatus;
   sourceRef?: string;
   keyTerms: TermRef[];
+  /** false when the source marks no correct answer: shown, never scored. */
+  scored: boolean;
+  /** Released by the owner for practice before medical review was recorded. */
+  practiceRelease: boolean;
+  /** Source-integrity flags, e.g. "option_count_5" (the source text may be imperfect). */
+  sourceFlags: string[];
 }
 
 /**
@@ -57,7 +64,8 @@ export interface Question {
  * answer.
  */
 export interface QuestionKey {
-  correct: QuestionOption["id"];
+  /** null when the source marks no correct answer. */
+  correct: QuestionOption["id"] | null;
   /** null when the source didn't include one; never invented. */
   explanationEn: string | null;
   explanationRu: string | null;
@@ -67,7 +75,8 @@ export interface QuestionKey {
 
 /** What the server returns after grading one answer. */
 export interface GradeResult {
-  correct: boolean;
+  /** null for an unscored question (no answer key in the source). */
+  correct: boolean | null;
   key: QuestionKey;
   topic: string;
 }
@@ -76,6 +85,7 @@ export interface TopicWithCount extends Topic {
   questionCount: number;
   /** Where a sub-topic sits, e.g. "Cardiology › Medications"; null for top-level topics. */
   path: string | null;
+  parentSlug: string | null;
 }
 
 /** A terminology card, loaded from the `terms` table. */
@@ -102,6 +112,8 @@ export interface ExamBlueprint {
   passThresholdPct: number;
   isDemo: boolean;
   note: string;
+  /** Only questions under this topic (and its sub-topics); all banks if unset. */
+  topicRoot?: string;
 }
 
 export interface Attempt {

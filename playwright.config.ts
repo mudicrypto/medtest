@@ -19,18 +19,18 @@ export default defineConfig({
     { name: "setup", testMatch: /auth\.setup\.ts/ },
     {
       name: "laptop",
-      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec|outage\.spec|study\.spec|question-bank\.spec)\.ts/,
+      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec|outage\.spec|study\.spec|question-bank\.spec|general-medicine\.spec)\.ts/,
       dependencies: ["setup"],
       use: { ...devices["Desktop Chrome"], viewport: { width: 1366, height: 860 }, storageState: "playwright/.auth/student-laptop.json" },
     },
     {
       name: "phone",
-      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec|outage\.spec|study\.spec|question-bank\.spec)\.ts/,
+      testIgnore: /(auth\.setup|auth\.spec|admin\.spec|bundle\.spec|progress\.spec|outage\.spec|study\.spec|question-bank\.spec|general-medicine\.spec)\.ts/,
       dependencies: ["setup"],
       use: { ...devices["Pixel 7"], storageState: "playwright/.auth/student-phone.json" },
     },
     // Account flows start signed out.
-    { name: "auth", testMatch: /(auth|admin|bundle|progress|study|question-bank)\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
+    { name: "auth", testMatch: /(auth|admin|bundle|progress|study|question-bank|general-medicine)\.spec\.ts/, use: { ...devices["Desktop Chrome"] } },
     // Switches the local database off and on, so it runs alone, after the rest.
     {
       name: "outage",

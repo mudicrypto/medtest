@@ -22,4 +22,14 @@ export const blueprints: ExamBlueprint[] = [
     isDemo: true,
     note: "18 questions picked at random from the bank. Not the official exam format.",
   },
+  {
+    id: "demo-general-medicine",
+    name: "General Medicine practice mock",
+    questionCount: 60,
+    timeLimitMinutes: 60,
+    passThresholdPct: 70,
+    isDemo: true,
+    topicRoot: "pa-general-medicine",
+    note: "60 questions picked at random from the General Medicine (31.05.01) bank only. Not the official exam format.",
+  },
 ];

@@ -28,6 +28,7 @@ async function Detail({ params }: { params: PageProps<"/admin/questions/[slug]">
   const q = /^[a-z0-9][a-z0-9-]{1,79}$/.test(slug) ? await getQuestionForStaff(slug) : null;
   if (!q) notFound();
   const key = Array.isArray(q.question_keys) ? q.question_keys[0] : q.question_keys;
+  const provenance = Array.isArray(q.question_provenance) ? q.question_provenance[0] : q.question_provenance;
   const options = [...q.question_options].sort((a, b) => a.position.localeCompare(b.position));
   const terms = Array.isArray(q.key_terms) ? (q.key_terms as { ru: string; en: string }[]) : [];
 
@@ -74,7 +75,7 @@ async function Detail({ params }: { params: PageProps<"/admin/questions/[slug]">
             })}
           </ol>
           <h2 className="mt-6 text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Explanation</h2>
-          <p className="mt-1.5 font-serif leading-relaxed text-ink-soft">{key?.explanation_en ?? "— no answer key —"}</p>
+          <p className="mt-1.5 font-serif leading-relaxed text-ink-soft">{key?.explanation_en ?? "— no explanation in the source —"}</p>
           {key?.explanation_ru && (
             <p lang="ru" className="mt-2 font-serif leading-relaxed text-ink-muted">
               {key.explanation_ru}
@@ -119,9 +120,20 @@ async function Detail({ params }: { params: PageProps<"/admin/questions/[slug]">
               <Row label="Rights" value={rightsLabel[q.rights_status]} />
               <Row label="Source" value={q.content_sources?.title ?? "—"} />
               <Row label="Source reference" value={q.source_ref ?? "—"} />
+              <Row label="Answer key" value={key?.correct ?? "Not marked in the source (not scored)"} />
+              <Row label="Released for practice" value={q.practice_release ? "Yes, before medical review" : "No"} />
+              <Row label="Source flags" value={q.source_flags.length ? q.source_flags.join(", ") : "None"} />
               <Row label="Difficulty" value={String(q.difficulty)} />
               <Row label="Version" value={String(q.version)} />
             </dl>
+            {provenance && (
+              <details className="mt-3">
+                <summary className="cursor-pointer text-xs text-accent">Original source record and audit ({provenance.bank})</summary>
+                <pre className="mt-2 max-h-80 overflow-auto rounded-lg bg-sunken p-2.5 text-[11px] leading-snug text-ink-soft">
+                  {JSON.stringify({ record: provenance.record, audit: provenance.audit }, null, 2)}
+                </pre>
+              </details>
+            )}
           </Card>
         </div>
       </div>

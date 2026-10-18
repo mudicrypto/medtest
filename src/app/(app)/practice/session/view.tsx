@@ -14,7 +14,7 @@ import { QuestionCard } from "@/components/question-card";
 import { Button, ButtonLink, Card, ProgressBar, Skeleton } from "@/components/ui";
 
 /** What the student chose for one question, and the key the server returned. */
-type SessionAnswer = { selected: QuestionOption["id"]; correct: boolean; key: QuestionKey };
+type SessionAnswer = { selected: QuestionOption["id"]; correct: boolean | null; key: QuestionKey };
 
 /**
  * Runs a list of questions one at a time.
@@ -138,17 +138,21 @@ function Session({ params }: { params: URLSearchParams }) {
 
 function Summary({ questions, answers }: { questions: Question[]; answers: Record<string, SessionAnswer> }) {
   const answered = questions.filter((q) => answers[q.id]);
-  const correct = answered.filter((q) => answers[q.id].correct).length;
-  const pct = answered.length ? Math.round((correct / answered.length) * 100) : 0;
-  const wrongIds = answered.filter((q) => !answers[q.id].correct).map((q) => q.id);
+  // Questions without an answer key in the source are listed but never scored.
+  const scored = answered.filter((q) => answers[q.id].correct !== null);
+  const unscored = answered.length - scored.length;
+  const correct = scored.filter((q) => answers[q.id].correct).length;
+  const pct = scored.length ? Math.round((correct / scored.length) * 100) : 0;
+  const wrongIds = scored.filter((q) => answers[q.id].correct === false).map((q) => q.id);
 
   return (
     <div className="mx-auto max-w-3xl">
       <Card className="p-7 text-center sm:p-10">
         <p className="text-sm font-medium text-accent">Session complete</p>
-        <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums text-ink">{pct}%</p>
+        <p className="mt-3 text-5xl font-semibold tracking-tight tabular-nums text-ink">{scored.length ? `${pct}%` : "—"}</p>
         <p className="mt-2 text-ink-muted">
-          {correct} of {answered.length} correct
+          {correct} of {scored.length} correct
+          {unscored > 0 && ` · ${unscored} not scored (no answer key in the source)`}
         </p>
         <div className="mt-7 flex flex-col justify-center gap-2 sm:flex-row">
           {wrongIds.length > 0 && (

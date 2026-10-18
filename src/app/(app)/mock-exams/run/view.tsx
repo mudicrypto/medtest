@@ -44,7 +44,7 @@ export function MockRunView() {
     let cancelled = false;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- clear a previous failure before trying again
     setLoadError(false);
-    startMock(blueprint.questionCount).then(
+    startMock(blueprint.id).then(
       (qs) => {
         if (cancelled) return;
         const t = Date.now();
@@ -57,7 +57,7 @@ export function MockRunView() {
     return () => {
       cancelled = true;
     };
-  }, [blueprint.questionCount, loadAttempt]);
+  }, [blueprint.id, loadAttempt]);
 
   const remaining = Math.max(0, blueprint.timeLimitMinutes * 60 - Math.floor((now - startedAt) / 1000));
 
@@ -71,7 +71,8 @@ export function MockRunView() {
       try {
         const { grades, summary, cards } = await submitMock(blueprint.id, ids, answers, (Date.now() - startedAt) / 1000);
         for (const g of grades) {
-          if (g.selected) {
+          // Unscored questions (no answer key) aren't recorded as attempts.
+          if (g.selected && g.isCorrect !== null) {
             recordAttempt({ questionId: g.questionId, topic: g.topic, selected: g.selected, correct: g.isCorrect, mode: "mock" }, cards[g.questionId]);
           }
         }
@@ -314,6 +315,7 @@ function Results({ result, grades, questions }: { result: MockSummary; grades: M
   const byTopic = useMemo(() => {
     const m = new Map<string, { correct: number; total: number }>();
     for (const g of grades) {
+      if (g.correct === null) continue; // not scored: no answer key in the source
       const cur = m.get(g.topic) ?? { correct: 0, total: 0 };
       cur.total++;
       if (g.isCorrect) cur.correct++;

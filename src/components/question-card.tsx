@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { Bookmark, BookmarkCheck, CircleCheck, CircleX, Languages, Sparkles } from "lucide-react";
+import { Bookmark, BookmarkCheck, CircleCheck, CircleHelp, CircleX, Languages, Sparkles } from "lucide-react";
 import type { Question, QuestionKey, QuestionOption } from "@/lib/types";
 import { useProgress } from "@/lib/progress-store";
 import { submitAnswer } from "@/app/(app)/question-actions";
 import { SourceBadge } from "./source-badge";
 import { Badge, Button, Card, cn } from "./ui";
 import { TutorDrawer } from "./tutor";
-import { NO_EXPLANATION } from "./answer-review";
+import { NO_ANSWER_KEY, NO_EXPLANATION } from "./answer-review";
 import { TUTOR_ENABLED } from "@/lib/features";
 
 type OptionId = QuestionOption["id"];
@@ -22,13 +22,14 @@ export function QuestionCard({
   question: Question;
   mode: "practice" | "review";
   /** Called once the server has graded the answer. */
-  onAnswered?: (answer: { selected: OptionId; correct: boolean; key: QuestionKey }) => void;
+  onAnswered?: (answer: { selected: OptionId; correct: boolean | null; key: QuestionKey }) => void;
   /** Rendered after the answer is revealed, e.g. a "Next" button. */
   footer?: React.ReactNode;
 }) {
   const store = useProgress();
   const [selected, setSelected] = useState<OptionId | null>(null);
-  const [result, setResult] = useState<{ correct: boolean; key: QuestionKey } | null>(null);
+  // correct is null for an unscored question (the source marks no answer).
+  const [result, setResult] = useState<{ correct: boolean | null; key: QuestionKey } | null>(null);
   const [tutorOpen, setTutorOpen] = useState(false);
   const [checking, startChecking] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +45,10 @@ export function QuestionCard({
     startChecking(async () => {
       try {
         const r = await submitAnswer(question.id, selected, mode);
-        recordAttempt({ questionId: question.id, topic: r.topic, selected, correct: r.correct, mode }, r.card);
+        // Unscored questions aren't recorded: they never count as right or wrong.
+        if (r.correct !== null && r.card) {
+          recordAttempt({ questionId: question.id, topic: r.topic, selected, correct: r.correct, mode }, r.card);
+        }
         setResult(r);
         onAnswered?.({ selected, correct: r.correct, key: r.key });
       } catch {
@@ -53,15 +57,16 @@ export function QuestionCard({
     });
   }, [selected, result, checking, question.id, mode, recordAttempt, onAnswered]);
 
-  // Keyboard: 1–4 or A–D to choose, Enter to check.
+  // Keyboard: 1–9 or the option letter to choose, Enter to check.
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (tutorOpen || result || checking) return;
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
       const k = e.key.toUpperCase();
-      const map: Record<string, OptionId> = { "1": "A", "2": "B", "3": "C", "4": "D", A: "A", B: "B", C: "C", D: "D" };
-      if (map[k]) setSelected(map[k]);
+      const byNumber = /^[1-9]$/.test(k) ? question.options[Number(k) - 1]?.id : undefined;
+      const byLetter = question.options.find((o) => o.id === k)?.id;
+      if (byNumber ?? byLetter) setSelected((byNumber ?? byLetter)!);
       if (e.key === "Enter" && selected) {
         // Stop the same keypress from also clicking the "Next" button that
         // appears (and takes focus) once the answer is revealed.
@@ -71,7 +76,7 @@ export function QuestionCard({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [tutorOpen, result, checking, selected, submit]);
+  }, [tutorOpen, result, checking, selected, submit, question.options]);
 
   return (
     <>
@@ -81,6 +86,7 @@ export function QuestionCard({
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Badge>{question.topicName}</Badge>
             <SourceBadge origin={question.origin} reviewStatus={question.reviewStatus} />
+            {question.practiceRelease && <span className="text-xs text-ink-muted">English: AI translation</span>}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             {question.stemRu && (
@@ -122,13 +128,21 @@ export function QuestionCard({
               {question.stemRu}
             </p>
           )}
+          {question.sourceFlags.length > 0 && (
+            <p className="mt-3 rounded-lg bg-warning-soft px-3 py-2 text-xs text-warning" data-testid="source-note">
+              The source text of this question may be imperfect (for example, options merged or split when it was extracted
+              from a PDF). It is shown exactly as in the source.
+            </p>
+          )}
 
           <fieldset className="mt-6 space-y-2.5" disabled={!!result || checking}>
             <legend className="sr-only">Choose one answer</legend>
             {question.options.map((o) => {
               const isSel = selected === o.id;
               const isKey = result?.key.correct === o.id;
-              const isWrongPick = result && isSel && !result.correct;
+              const isWrongPick = result?.correct === false && isSel;
+              // Unscored: the student's pick is shown, never as right or wrong.
+              const isNeutralPick = result?.correct === null && isSel;
               return (
                 <label
                   key={o.id}
@@ -137,7 +151,8 @@ export function QuestionCard({
                     !result && (isSel ? "border-accent bg-accent-soft/60" : "border-line hover:border-line-strong hover:bg-sunken/50"),
                     result && isKey && "border-success bg-success-soft",
                     isWrongPick && "border-danger bg-danger-soft",
-                    result && !isKey && !isWrongPick && "border-line opacity-70",
+                    isNeutralPick && "border-line-strong bg-sunken",
+                    result && !isKey && !isWrongPick && !isNeutralPick && "border-line opacity-70",
                     result && "cursor-default",
                   )}
                 >
@@ -155,7 +170,8 @@ export function QuestionCard({
                       !result && (isSel ? "border-accent bg-accent text-white" : "border-line-strong text-ink-soft"),
                       result && isKey && "border-success bg-success text-white",
                       isWrongPick && "border-danger bg-danger text-white",
-                      result && !isKey && !isWrongPick && "border-line text-ink-muted",
+                      isNeutralPick && "border-ink-soft bg-ink-soft text-white",
+                      result && !isKey && !isWrongPick && !isNeutralPick && "border-line text-ink-muted",
                     )}
                   >
                     {result && isKey ? <CircleCheck className="size-4" /> : isWrongPick ? <CircleX className="size-4" /> : o.id}
@@ -175,7 +191,9 @@ export function QuestionCard({
 
           {!result && (
             <div className="mt-6 flex items-center justify-between gap-3">
-              <p className="hidden text-xs text-ink-muted sm:block">Tip: press 1–4 to choose, Enter to check.</p>
+              <p className="hidden text-xs text-ink-muted sm:block">
+                Tip: press 1–{Math.min(question.options.length, 9)} to choose, Enter to check.
+              </p>
               <Button onClick={submit} disabled={!selected || checking} className="w-full sm:w-auto">
                 {checking ? "Checking…" : "Check answer"}
               </Button>
@@ -190,16 +208,24 @@ export function QuestionCard({
 
         {result && (
           <div className="border-t border-line bg-canvas px-5 py-6 sm:px-7">
-            <p
-              className={cn(
-                "flex items-center gap-2 text-sm font-semibold",
-                result.correct ? "text-success" : "text-danger",
-              )}
-              role="status"
-            >
-              {result.correct ? <CircleCheck className="size-5" /> : <CircleX className="size-5" />}
-              {result.correct ? "Correct" : `Not quite — the answer is ${result.key.correct}`}
-            </p>
+            {result.correct === null ? (
+              <p className="flex items-center gap-2 text-sm font-semibold text-ink-soft" role="status">
+                <CircleHelp className="size-5" />
+                Not scored
+              </p>
+            ) : (
+              <p
+                className={cn(
+                  "flex items-center gap-2 text-sm font-semibold",
+                  result.correct ? "text-success" : "text-danger",
+                )}
+                role="status"
+              >
+                {result.correct ? <CircleCheck className="size-5" /> : <CircleX className="size-5" />}
+                {result.correct ? "Correct" : `Not quite — the answer is ${result.key.correct}`}
+              </p>
+            )}
+            {result.correct === null && <p className="mt-1.5 text-sm text-ink-muted">{NO_ANSWER_KEY}</p>}
             <h3 className="mt-4 text-xs font-semibold uppercase tracking-[0.1em] text-ink-muted">Explanation</h3>
             {result.key.explanationEn ? (
               <p className="mt-1.5 font-serif text-[1.02rem] leading-[1.7] text-ink-soft">{result.key.explanationEn}</p>

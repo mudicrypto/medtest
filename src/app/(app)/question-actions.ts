@@ -7,7 +7,7 @@
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { getQuestions, listQuestionRefs } from "@/lib/content/queries";
+import { getQuestions, listQuestionRefs, listTopicsUnder } from "@/lib/content/queries";
 import { gradeCardFor, type MockSummary } from "@/lib/progress/server";
 import { gradeFromAnswer, type SrsCard } from "@/lib/srs";
 import { blueprints } from "@/demo/blueprints";
@@ -15,7 +15,8 @@ import type { GradeResult, Question, QuestionOption } from "@/lib/types";
 
 const slug = z.string().regex(/^[a-z0-9][a-z0-9-]{1,79}$/);
 const slugList = z.array(slug).max(300);
-const position = z.enum(["A", "B", "C", "D"]);
+// Option letters A–M: imported banks keep their original 1–13 options.
+const position = z.string().regex(/^[A-M]$/);
 const mode = z.enum(["practice", "review", "mock"]);
 
 export async function fetchQuestions(slugs: string[]): Promise<Question[]> {
@@ -25,14 +26,14 @@ export async function fetchQuestions(slugs: string[]): Promise<Question[]> {
 
 export async function fetchQuestionRefs(topics: string[] = []): Promise<{ id: string; topic: string }[]> {
   await getCurrentUser();
-  return listQuestionRefs(z.array(z.string().max(60)).max(50).parse(topics));
+  return listQuestionRefs(z.array(z.string().max(80)).max(200).parse(topics));
 }
 
 export async function submitAnswer(
   questionId: string,
   selected: QuestionOption["id"],
   attemptMode: "practice" | "review" = "practice",
-): Promise<GradeResult & { card: SrsCard }> {
+): Promise<GradeResult & { card: SrsCard | null }> {
   const user = await getCurrentUser();
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -43,14 +44,16 @@ export async function submitAnswer(
     })
     .single();
   if (error || !data) throw new Error("We couldn't check that answer. Please try again.");
+  // No answer key in the source: nothing was recorded, and nothing is scheduled.
+  const scored = data.correct !== null && data.is_correct !== null;
   // Reschedule this question in the student's review queue.
-  const card = await gradeCardFor(supabase, user.id, "question", questionId, gradeFromAnswer(data.is_correct));
+  const card = scored ? await gradeCardFor(supabase, user.id, "question", questionId, gradeFromAnswer(data.is_correct!)) : null;
   return {
     card,
-    correct: data.is_correct,
+    correct: scored ? data.is_correct : null,
     topic: data.topic,
     key: {
-      correct: data.correct as QuestionOption["id"],
+      correct: data.correct,
       explanationEn: data.explanation_en,
       explanationRu: data.explanation_ru,
       tutorHint: data.tutor_hint ?? "",
@@ -58,11 +61,18 @@ export async function submitAnswer(
   };
 }
 
-/** Picks `count` random available questions for a mock exam. */
-export async function startMock(count: number): Promise<Question[]> {
+/**
+ * Picks `count` random available questions for a mock exam: from the
+ * blueprint's bank if it has one (e.g. General Medicine), else from all.
+ * Questions without an answer key can't be scored, so they're left out.
+ */
+export async function startMock(blueprintId: string): Promise<Question[]> {
   await getCurrentUser();
-  const n = z.number().int().min(1).max(300).parse(count);
-  const refs = await listQuestionRefs();
+  const blueprint = blueprints.find((b) => b.id === blueprintId);
+  if (!blueprint) throw new Error("Unknown exam format");
+  const n = blueprint.questionCount;
+  const topics = blueprint.topicRoot ? await listTopicsUnder(blueprint.topicRoot) : undefined;
+  const refs = await listQuestionRefs(topics, { scoredOnly: true });
   const ids = refs.map((r) => r.id);
   for (let i = ids.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -75,8 +85,9 @@ export interface MockGrade {
   questionId: string;
   topic: string;
   selected: QuestionOption["id"] | null;
-  correct: QuestionOption["id"];
-  isCorrect: boolean;
+  /** null for a question without an answer key (not scored). */
+  correct: QuestionOption["id"] | null;
+  isCorrect: boolean | null;
   explanationEn: string | null;
 }
 
@@ -111,14 +122,15 @@ export async function submitMock(
       questionId: r.slug,
       topic: r.topic,
       selected: (r.selected as QuestionOption["id"] | null) ?? null,
-      correct: r.correct as QuestionOption["id"],
+      correct: r.correct,
       isCorrect: r.is_correct,
       explanationEn: r.explanation_en,
     }));
 
   // The score comes from the server's grading, never from the browser.
-  const score = grades.filter((g) => g.isCorrect).length;
-  const total = grades.length;
+  // Only questions with an answer key count towards the score.
+  const score = grades.filter((g) => g.isCorrect === true).length;
+  const total = grades.filter((g) => g.correct !== null).length;
   const summary: MockSummary = {
     blueprintId: blueprint.id,
     questionIds: grades.map((g) => g.questionId),
@@ -144,8 +156,8 @@ export async function submitMock(
   }
 
   const cards: Record<string, SrsCard> = {};
-  for (const g of grades.filter((g) => g.selected)) {
-    cards[g.questionId] = await gradeCardFor(supabase, user.id, "question", g.questionId, gradeFromAnswer(g.isCorrect));
+  for (const g of grades.filter((g) => g.selected && g.isCorrect !== null)) {
+    cards[g.questionId] = await gradeCardFor(supabase, user.id, "question", g.questionId, gradeFromAnswer(g.isCorrect!));
   }
   return { grades, summary, cards };
 }

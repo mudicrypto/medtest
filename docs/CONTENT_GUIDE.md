@@ -165,3 +165,18 @@ only accepts the local database on your computer.
 
 `pnpm db:reset` deletes imported banks from the local database. Run the import
 again afterwards.
+
+## General Medicine Primary Accreditation bank (local database only)
+
+The 5,071-question bilingual bank is imported with
+`pnpm content:import-gm` (add `--dry-run` to check, or `--verify` to compare
+the database with the package again). The package lives in
+`content/private/general-medicine/bilingual/`, which git ignores. Every
+question is imported as in the source:
+
+- 1–13 options;
+- the PDF answer key, or no key, in which case the question is never scored;
+- a note on questions whose source text may be imperfect.
+
+All of them are released for practice without claiming medical review. See
+[GENERAL_MEDICINE_IMPORT_PLAN.md](GENERAL_MEDICINE_IMPORT_PLAN.md).

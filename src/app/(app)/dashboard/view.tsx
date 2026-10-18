@@ -20,7 +20,7 @@ export function DashboardView({ greeting, topics }: { greeting: React.ReactNode;
   const streak = streakDays(s.attempts, s.now);
   const days = dailyStats(s.attempts, 14, s.now);
   const bankSize = topics.reduce((n, t) => n + t.questionCount, 0);
-  const weakest = topicStats(s.attempts, topics)
+  const weakest = topicStats(s.attempts, topics.filter((t) => t.questionCount > 0))
     .filter((t) => t.accuracy !== null)
     .sort((a, b) => a.accuracy! - b.accuracy!)
     .slice(0, 3);

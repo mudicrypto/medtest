@@ -17,20 +17,34 @@ export const ORIGINS: ContentOrigin[] = ["original_practice", "official_verified
 export const RIGHTS: RightsStatus[] = ["owned", "licensed", "public_domain", "permission_pending", "not_cleared"];
 
 /** Mirrors public.is_published() in the database. */
-export function isPublished(q: { rights_status: RightsStatus; review_status: ReviewStatus; origin: ContentOrigin }) {
+export function isPublished(q: {
+  rights_status: RightsStatus;
+  review_status: ReviewStatus;
+  origin: ContentOrigin;
+  practice_release?: boolean;
+}) {
   return (
-    ["owned", "licensed", "public_domain"].includes(q.rights_status) &&
     q.review_status !== "retired" &&
-    (q.review_status === "approved" || q.origin === "demo")
+    ((["owned", "licensed", "public_domain"].includes(q.rights_status) && (q.review_status === "approved" || q.origin === "demo")) ||
+      !!q.practice_release)
   );
 }
 
 export async function contentStats() {
   await requireStaff();
   const supabase = await createClient();
-  const { data, error } = await supabase.from("questions").select("review_status, origin, rights_status");
-  if (error) throw new Error(`Could not load content stats: ${error.message}`);
-  const rows = data;
+  // Read every page: the API returns at most 1,000 rows per request.
+  const rows: { review_status: ReviewStatus; origin: ContentOrigin; rights_status: RightsStatus; practice_release: boolean }[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await supabase
+      .from("questions")
+      .select("review_status, origin, rights_status, practice_release")
+      .order("slug")
+      .range(from, from + 999);
+    if (error) throw new Error(`Could not load content stats: ${error.message}`);
+    rows.push(...data);
+    if (data.length < 1000) break;
+  }
   const byStatus = Object.fromEntries(REVIEW_STATUSES.map((s) => [s, rows.filter((r) => r.review_status === s).length]));
   const byOrigin = Object.fromEntries(ORIGINS.map((o) => [o, rows.filter((r) => r.origin === o).length]));
   return { total: rows.length, published: rows.filter(isPublished).length, byStatus, byOrigin } as {
@@ -74,7 +88,7 @@ export async function getQuestionForStaff(slug: string) {
   const { data, error } = await supabase
     .from("questions")
     .select(
-      "*, topics(name_en), question_options(position, text_en, text_ru), question_keys(correct, explanation_en, explanation_ru, tutor_hint), content_sources(title, publisher, rights_status, permission_evidence), reviewer:profiles!questions_reviewed_by_fkey(display_name)",
+      "*, topics(name_en), question_options(position, text_en, text_ru), question_keys(correct, explanation_en, explanation_ru, tutor_hint), question_provenance(bank, record, audit), content_sources(title, publisher, rights_status, permission_evidence), reviewer:profiles!questions_reviewed_by_fkey(display_name)",
     )
     .eq("slug", slug)
     .maybeSingle();

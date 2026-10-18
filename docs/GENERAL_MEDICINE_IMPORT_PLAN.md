@@ -1,8 +1,10 @@
 # Import plan: General Medicine Primary Accreditation bank (5,071 questions)
 
-**Status: plan only. Nothing has been written to any database.** The local import
-waits for your approval and for the English translation (the app needs an
-English question text).
+**Status (2026-10-18): imported into the LOCAL database, revised plan.** On the
+owner's instruction, **all 5,071 questions** are imported and available in
+student Practice, including the 648 that were going to a "needs correction"
+list. Section 8 describes how; sections 1–7 are the original dry-run analysis,
+kept for the record. Nothing has been applied to a live project.
 
 Source files (kept out of git): `content/private/general-medicine/`
 - `general-medicine-pa-5071/`: 19 discipline files, `manifest.json`,
@@ -164,3 +166,37 @@ That leaves **4,423 questions** that can be imported faithfully.
   - no Cyrillic left in the English;
   - Russian text, answer keys, IDs, disciplines and topics unchanged;
   - the first 25 translations kept.
+
+## 8. What was implemented (revised plan)
+
+- **All 5,071 questions imported.** They are bilingual: the Russian is the
+  original, and the English was translated by Claude (AI), not clinically
+  reviewed. Every one is available in student Practice under Primary
+  Accreditation › General Medicine (31.05.01) › discipline › topic, separate
+  from the Cardiology specialty bank.
+- **Any number of options.** Questions keep their source options exactly: 1 to
+  13 options (A–M), duplicate option text included. Nothing is padded, trimmed
+  or invented.
+- **PDF answer key** used as the master, unchanged, for every question.
+- **No answer key (q3718).** The question is shown and can be answered, but it
+  is never marked right or wrong. It is left out of scores, mistakes, review
+  and mock exams.
+- **Source-integrity flags (648 questions).** The question is shown with a
+  note that its source text may be imperfect. The original record and its
+  audit entry (2,130 entries) are kept in the staff-only provenance table and
+  shown in Content admin.
+- **Review and rights are not claimed.** Questions stay "In medical review"
+  with rights "permission pending". The owner's release for practice is
+  recorded separately (`practice_release`), and the app shows "In medical
+  review" and "English: AI translation".
+- **New demo mock exam** ("General Medicine practice mock", 60 questions from
+  this bank only), labelled as a demo format, not the official exam format.
+- **Topic counts and question lists work above 1,000 questions** (the API
+  returns at most 1,000 rows per request).
+- **Command.** `pnpm content:import-gm [--dry-run|--verify]`, local database
+  only, one transaction. The verification compares every question, option and
+  answer key with the package.
+- **Before production.** Applying the migration
+  `20261018090000_variable_options.sql` and importing into a live project both
+  need the owner's approval. Rights and medical review should be recorded
+  before real students rely on these questions.

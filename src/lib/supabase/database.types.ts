@@ -151,14 +151,14 @@ isOneToOne: false
                   ]
                 },"question_keys": {
                   Row: {
-                    "correct": string,"explanation_en": string | null,"explanation_ru": string | null,"question_id": string,"references": string | null,"tutor_hint": string | null
+                    "correct": string | null,"explanation_en": string | null,"explanation_ru": string | null,"question_id": string,"references": string | null,"tutor_hint": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "correct": string,"explanation_en"?: string | null,"explanation_ru"?: string | null,"question_id": string,"references"?: string | null,"tutor_hint"?: string | null
+                    "correct"?: string | null,"explanation_en"?: string | null,"explanation_ru"?: string | null,"question_id": string,"references"?: string | null,"tutor_hint"?: string | null
                   }
                   Update: {
-                    "correct"?: string,"explanation_en"?: string | null,"explanation_ru"?: string | null,"question_id"?: string,"references"?: string | null,"tutor_hint"?: string | null
+                    "correct"?: string | null,"explanation_en"?: string | null,"explanation_ru"?: string | null,"question_id"?: string,"references"?: string | null,"tutor_hint"?: string | null
                   }
                   Relationships: [
                     {
@@ -189,16 +189,36 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"question_provenance": {
+                  Row: {
+                    "audit": Json | null,"bank": string,"question_id": string,"record": NonNullable<Json>,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "audit"?: Json | null,"bank": string,"question_id": string,"record": NonNullable<Json>,"updated_at"?: string
+                  }
+                  Update: {
+                    "audit"?: Json | null,"bank"?: string,"question_id"?: string,"record"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "question_provenance_question_id_fkey"
+      columns: ["question_id"]
+isOneToOne: true
+      referencedRelation: "questions"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"questions": {
                   Row: {
-                    "created_at": string,"difficulty": number,"id": string,"key_terms": NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"review_note": string | null,"review_status": Database["public"]['Enums']["review_status"],"reviewed_at": string | null,"reviewed_by": string | null,"rights_status": Database["public"]['Enums']["rights_status"],"slug": string,"source_id": string | null,"source_ref": string | null,"stem_en": string,"stem_ru": string | null,"topic": string,"updated_at": string,"version": number,"is_published": boolean | null
+                    "created_at": string,"difficulty": number,"id": string,"key_terms": NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"practice_release": boolean,"review_note": string | null,"review_status": Database["public"]['Enums']["review_status"],"reviewed_at": string | null,"reviewed_by": string | null,"rights_status": Database["public"]['Enums']["rights_status"],"scored": boolean,"slug": string,"source_flags": (string)[],"source_id": string | null,"source_ref": string | null,"stem_en": string,"stem_ru": string | null,"topic": string,"updated_at": string,"version": number,"is_published": boolean | null
                   }
                   ComputedFields: "is_published"
                   Insert: {
-                    "created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status": Database["public"]['Enums']["rights_status"],"slug": string,"source_id"?: string | null,"source_ref"?: string | null,"stem_en": string,"stem_ru"?: string | null,"topic": string,"updated_at"?: string,"version"?: number
+                    "created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin": Database["public"]['Enums']["content_origin"],"practice_release"?: boolean,"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status": Database["public"]['Enums']["rights_status"],"scored"?: boolean,"slug": string,"source_flags"?: (string)[],"source_id"?: string | null,"source_ref"?: string | null,"stem_en": string,"stem_ru"?: string | null,"topic": string,"updated_at"?: string,"version"?: number
                   }
                   Update: {
-                    "created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin"?: Database["public"]['Enums']["content_origin"],"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status"?: Database["public"]['Enums']["rights_status"],"slug"?: string,"source_id"?: string | null,"source_ref"?: string | null,"stem_en"?: string,"stem_ru"?: string | null,"topic"?: string,"updated_at"?: string,"version"?: number
+                    "created_at"?: string,"difficulty"?: number,"id"?: string,"key_terms"?: NonNullable<Json>,"origin"?: Database["public"]['Enums']["content_origin"],"practice_release"?: boolean,"review_note"?: string | null,"review_status"?: Database["public"]['Enums']["review_status"],"reviewed_at"?: string | null,"reviewed_by"?: string | null,"rights_status"?: Database["public"]['Enums']["rights_status"],"scored"?: boolean,"slug"?: string,"source_flags"?: (string)[],"source_id"?: string | null,"source_ref"?: string | null,"stem_en"?: string,"stem_ru"?: string | null,"topic"?: string,"updated_at"?: string,"version"?: number
                   }
                   Relationships: [
                     {
@@ -284,7 +304,21 @@ isOneToOne: false
                 }
           }
           Views: {
-            [_ in never]: never
+            "topic_question_counts": {
+                  Row: {
+                    "question_count": number | null,"topic": string | null
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    {
+      foreignKeyName: "questions_topic_fkey"
+      columns: ["topic"]
+isOneToOne: false
+      referencedRelation: "topics"
+      referencedColumns: ["slug"]
+    }
+                  ]
+                }
           }
           Functions: {
             "grade_mock":

@@ -21,6 +21,21 @@ export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
     .filter((t) => picked.length === 0 || picked.includes(t.slug))
     .reduce((sum, t) => sum + t.questionCount, 0);
 
+  // Topics grouped by where they sit (e.g. "Primary Accreditation › General
+  // Medicine (31.05.01) › Cardiology"); empty container topics are hidden.
+  const parents = new Set(topics.map((t) => t.parentSlug).filter(Boolean));
+  const groups: { path: string | null; topics: TopicWithCount[] }[] = [];
+  for (const t of topics) {
+    if (t.questionCount === 0 && parents.has(t.slug)) continue;
+    const g = groups.find((x) => x.path === t.path) ?? groups[groups.push({ path: t.path, topics: [] }) - 1];
+    g.topics.push(t);
+  }
+
+  function toggleGroup(slugs: string[]) {
+    const all = slugs.every((s) => picked.includes(s));
+    setPicked((p) => (all ? p.filter((x) => !slugs.includes(x)) : [...new Set([...p, ...slugs])]));
+  }
+
   function toggle(slug: string) {
     setPicked((p) => (p.includes(slug) ? p.filter((x) => x !== slug) : [...p, slug]));
   }
@@ -51,8 +66,24 @@ export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
             </button>
           )}
         </div>
-        <div className="mt-4 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-          {topics.map((t) => {
+        <div className="mt-4 space-y-6">
+          {groups.map((g) => {
+            const slugs = g.topics.filter((t) => t.questionCount > 0).map((t) => t.slug);
+            const allOn = slugs.length > 0 && slugs.every((x) => picked.includes(x));
+            return (
+              <section key={g.path ?? "general"} aria-label={g.path ?? "Topics"}>
+                {(g.path || groups.length > 1) && (
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <h3 className="text-[11px] font-medium uppercase tracking-wide text-accent">{g.path ?? "Demo topics"}</h3>
+                    {slugs.length > 1 && (
+                      <button type="button" onClick={() => toggleGroup(slugs)} className="shrink-0 text-xs text-accent hover:underline">
+                        {allOn ? "Clear all" : "Select all"}
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                  {g.topics.map((t) => {
             const on = picked.includes(t.slug);
             const st = stats[t.slug];
             const count = t.questionCount;
@@ -78,7 +109,6 @@ export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
                   {on && <Check className="size-3.5" aria-hidden />}
                 </span>
                 <span className="min-w-0">
-                  {t.path && <span className="mb-0.5 block text-[11px] font-medium uppercase tracking-wide text-accent">{t.path}</span>}
                   <span className="block text-sm font-medium text-ink">{t.nameEn}</span>
                   <span lang="ru" className="block text-xs text-ink-muted">
                     {t.nameRu}
@@ -89,6 +119,10 @@ export function PracticeView({ topics }: { topics: TopicWithCount[] }) {
                   </span>
                 </span>
               </button>
+            );
+          })}
+                </div>
+              </section>
             );
           })}
         </div>
