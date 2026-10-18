@@ -36,6 +36,38 @@ type Block = {
 
 const BLOCKS: Block[] = [
   {
+    // Same source as the existing "Cardiac glycosides…" topic: 81 records are
+    // identical (skipped); 7 are cleaner versions of its "needs correction"
+    // records and replace them in place (same IDs).
+    file: `${DIR}/medications-glycosides.json`,
+    idPrefix: "cardio-medications-01",
+    topic: {
+      slug: "cardio-medications-01",
+      name_en: "Cardiac glycosides, nitrates, nitroglycerin, ACE inhibitors and cyclooxygenase inhibitors",
+      name_ru: "Сердечные гликозиды, нитраты, нитроглицерин, ингибиторы АПФ, циклооксигеназы",
+      category_en: "Medications",
+      category_ru: "",
+      sort_order: 11,
+      existing: true,
+    },
+    review: "attested",
+    source: { title: "Cardiology → Medications question banks (RU–EN)", notesFromFile: false },
+  },
+  {
+    file: `${DIR}/healthcare-organization-1.json`,
+    idPrefix: "cardio-healthcare-org-01",
+    topic: {
+      slug: "cardio-healthcare-org-01",
+      name_en: "Healthcare organization — part 1",
+      name_ru: "Организация здравоохранения — часть 1",
+      category_en: "Healthcare Organization",
+      category_ru: "Организация здравоохранения",
+      sort_order: 16,
+    },
+    review: "released",
+    source: { title: "Cardiology → Healthcare organization question block 1 (RU–EN)", notesFromFile: true },
+  },
+  {
     file: `${DIR}/pathology-arterial-hypertension.json`,
     idPrefix: "cardio-arterial-hypertension-01",
     topic: {
@@ -249,7 +281,7 @@ where not exists (select 1 from public.content_sources c where c.title = s.title
 insert into public.topics (slug, name_en, name_ru, parent_slug, category_en, category_ru, sort_order)
 select t.slug, t.name_en, t.name_ru, 'cardiology', t.category_en, t.category_ru, t.sort_order
 from payload, jsonb_to_recordset(doc -> 'topics') t(slug text, name_en text, name_ru text, category_en text, category_ru text, sort_order int)
-on conflict (slug) do update set category_ru = excluded.category_ru;
+on conflict (slug) do nothing;
 
 create temp table incoming on commit drop as
 select p.* from payload, jsonb_to_recordset(doc -> 'planned') p(

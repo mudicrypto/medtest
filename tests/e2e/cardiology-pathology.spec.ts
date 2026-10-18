@@ -106,3 +106,35 @@ test("the question with no marked answer is shown but not scored", async ({ page
   await answer(main, "A");
   await expect(main.getByRole("status")).toHaveText("Not scored");
 });
+
+test.describe("Healthcare organization block and restored Medications records", () => {
+  let healthcare = 0;
+  test.beforeAll(async () => {
+    const { count } = await admin.from("questions").select("slug", { count: "exact", head: true }).like("slug", "cardio-healthcare-org-01-%");
+    healthcare = count ?? 0;
+  });
+
+  test("Healthcare organization is its own Cardiology group; unscored questions stay unscored", async ({ page }) => {
+    test.skip(!healthcare, "Healthcare organization block not imported locally.");
+    await signInNew(page);
+    const main = page.getByRole("main");
+    await page.goto("/practice");
+    const section = main.locator("section[aria-label='Cardiology › Healthcare Organization']");
+    await expect(section.getByRole("button", { name: /^Healthcare organization — part 1/ })).toContainText(`${healthcare} questions`);
+    await page.goto("/questions/cardio-healthcare-org-01-q0597");
+    await answer(main, "A");
+    await expect(main.getByRole("status")).toHaveText("Not scored");
+  });
+
+  test("a restored Medications record shows only its visible options, with the source note", async ({ page }) => {
+    const { data } = await admin.from("questions").select("review_status").eq("slug", "cardio-medications-01-q0284").maybeSingle();
+    test.skip(!data || data.review_status !== "approved", "Restored Medications records not imported locally.");
+    await signInNew(page);
+    const main = page.getByRole("main");
+    await page.goto("/questions/cardio-medications-01-q0284");
+    await expect(main.locator("input[type=radio]")).toHaveCount(3);
+    await expect(main.getByTestId("source-note")).toBeVisible();
+    await answer(main, "A");
+    await expect(main.getByRole("status")).toHaveText("Correct");
+  });
+});

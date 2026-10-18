@@ -185,9 +185,14 @@ select q.id, i.correct, null from incoming i join public.questions q on q.slug =
 on conflict (question_id) do update set correct = excluded.correct;
 
 -- Records that need correction: kept unchanged, never shown to students.
+-- Records already replaced by a corrected version from a later block
+-- (pnpm content:import-cardio-blocks) are left alone.
 create temp table flagged on commit drop as
 select f.* from payload, jsonb_to_recordset(doc -> 'issues')
-  f(slug text, batch text, topic text, source_ref text, issues text[], record jsonb);
+  f(slug text, batch text, topic text, source_ref text, issues text[], record jsonb)
+where not exists (
+  select 1 from public.questions q join public.question_provenance p on p.question_id = q.id
+  where q.slug = f.slug and p.bank = 'cardiology-blocks');
 insert into public.question_import_issues (slug, batch, topic, source_ref, issues, record, updated_at)
 select slug, batch, topic, source_ref, issues, record, now() from flagged
 on conflict (slug) do update set batch = excluded.batch, topic = excluded.topic, source_ref = excluded.source_ref,
@@ -206,6 +211,13 @@ commit;
 
 // ── Verify: the database matches the file exactly ───────────────────────────
 const slugs = [...plan.questions.map((q) => q.slug), ...plan.issues.map((i) => i.slug)];
+// Flagged records that a later, corrected block has replaced (now in Practice).
+const superseded = new Set<string>(
+  JSON.parse(
+    psql(`select coalesce(json_agg(q.slug), '[]') from public.questions q join public.question_provenance p on p.question_id = q.id
+          where p.bank = 'cardiology-blocks' and q.slug = any (array(select jsonb_array_elements_text(${literal(plan.issues.map((i) => i.slug))})))`),
+  ),
+);
 const rows = JSON.parse(
   psql(`
 select json_build_object(
@@ -265,6 +277,7 @@ for (const p of plan.questions) {
   if (problems.length > before) badQuestions.add(p.slug);
 }
 for (const i of plan.issues) {
+  if (superseded.has(i.slug)) continue;
   if (!rows.issues.includes(i.slug)) problems.push(`${i.slug}: missing from the "needs correction" list`);
   const q = bySlug.get(i.slug);
   if (q && q.review_status === "approved") problems.push(`${i.slug}: needs correction but is visible to students`);
@@ -278,7 +291,8 @@ for (const t of plan.topics) {
 
 console.log(`\nVerification against the file:`);
 console.log(`  ${plan.questions.length - badQuestions.size}/${plan.questions.length} questions identical (text, options, answer key, topic)`);
-console.log(`  ${rows.issues.length}/${plan.issues.length} records on the "needs correction" list`);
+console.log(`  ${rows.issues.length}/${plan.issues.length - superseded.size} records on the "needs correction" list` +
+  (superseded.size ? ` (${superseded.size} replaced by a corrected later block and now in Practice)` : ""));
 console.log(`  ${plan.topics.length} topics under ${bank.parent.nameEn} › ${plan.topics[0]?.categoryEn}`);
 if (problems.length) {
   for (const p of problems.slice(0, 30)) console.log(`  ✗ ${p}`);
