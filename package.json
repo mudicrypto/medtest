@@ -18,7 +18,8 @@
     "content:seed": "tsx scripts/csv-to-seed.ts",
     "local:setup": "tsx scripts/local-setup.ts",
     "content:import": "tsx scripts/import-question-bank.ts",
-    "content:import-gm": "tsx scripts/import-general-medicine.ts"
+    "content:import-gm": "tsx scripts/import-general-medicine.ts",
+    "content:import-cardio-blocks": "tsx scripts/import-cardiology-blocks.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",
